@@ -1,3 +1,9 @@
+#references
+allen-torrent
+node_modules
+.idea
+*.torrent
+
 # Logs
 logs
 *.log

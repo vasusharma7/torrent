@@ -1,0 +1,5 @@
+https://superuser.com/questions/843110/what-is-the-difference-between-udp-and-http-torrent-trackers
+http://www.bittorrent.org/beps/bep_0015.html
+https://wiki.theory.org/index.php/BitTorrentSpecification
+https://wiki.theory.org/BitTorrentSpecification#Messages
+https://nodejs.org/api/net.html#net_net_createconnection
