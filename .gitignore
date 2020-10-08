@@ -2,7 +2,7 @@
 allen-torrent
 node_modules
 .idea
-*.torrent
+# *.torrent
 
 # Logs
 logs
