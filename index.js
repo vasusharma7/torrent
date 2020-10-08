@@ -1,15 +1,36 @@
 const torrentFile = require("./src/torrent-file/parse-torrent-file");
 const torrentUtils = require("./src/utils/torrent-file-utils")
 const connection = require("./src/connection");
-const torrent = torrentFile.init(process.argv[2])
+const { torrent, pieces, pieceLen } = torrentFile.init(process.argv[2])
+
+connection.Peer.prototype.pieces = pieces;
+connection.Peer.prototype.piecesLen = pieceLen;
+connection.Peer.prototype.pieceTracker = new Array(pieces.length).fill(0);
+connection.Peer.prototype.downloaded = new Array(pieces.length).fill(0);
+
 // const axios = require("axios")
+// let piecesCount = new Array(pieces.length).fill(0);
+
 torrentFile.parse(torrent, (parsed) => {
-    // console.log(torrent)
     console.log("got the peers", parsed.peers);
-    for (let peer of parsed.peers) {
-        connection.connect(peer, torrent)
-    }
+    const allPeers = []
+    const connectedPeers = []
+    parsed.peers.forEach(peer => {
+        allPeers.push(new connection.Peer(peer, torrent, pieces, pieceLen))
+    })
+
+    allPeers.forEach(peer => {
+        peer.execute((resp) => {
+            connectedPeers.push(resp)
+        })
+    })
+
+
+
 });
+
+
+
 // console.log(torrent.announce.toString("utf8"))
 // console.log(torrent.info.toString("utf8"))
 // console.log(torrentUtils.left(torrent))

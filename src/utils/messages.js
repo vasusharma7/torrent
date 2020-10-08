@@ -1,5 +1,18 @@
-const torrentUtils = require("./torrent-file-utils")
+const torrentUtils = require("./torrent-file-utils");
+const { parse } = require("path");
 // <pstrlen><pstr><reserved><info_hash><peer_id>
+const messageId = {
+    0: "choke",
+    1: 'unchoke',
+    2: 'interested',
+    3: 'not_interested',
+    4: 'have',
+    5: 'bitfield',
+    6: 'request',
+    7: 'piece',
+    8: 'cancel',
+    9: 'port'
+}
 const handshake = (torrent) => {
     console.log("building handshake")
 
@@ -96,7 +109,7 @@ const bitfield = (payload) => {
 // request: <len=0013 > <id=6 > <index><begin><length>
 const request = (payload) => {
 
-    console.log("building request")
+    console.log("building request", payload)
 
     const buffer = Buffer.alloc(17);
 
@@ -161,7 +174,50 @@ const parseHandshake = (data, torrent) => {
 
     return 0;
 }
+const parseBitfield = (bitfield) => {
+    let parsed = []
+    for (let i = 0; i < bitfield.length; i++) {
+        parsed.push(bitfield.readUInt8(i).toString(2))
+    }
+    parsed = parsed.join("")
+    console.log(parsed.length)
+    return parsed;
+}
+const parseResponse = (data, torrent) => {
+    if (parseHandshake(data, torrent)) return { type: "handshake" };
+    let len = data.readUInt32BE(0);
+    let id = -1
+    let payload = {}
+    if (len >= 5) {
+        id = data.readUInt8(4);
+
+        if (len >= 5) {
+            switch (id) {
+                case 4:
+                    payload['index'] = data.slice(5)
+                    break;
+                case 5:
+                    console.log("LENGTH IS - ", len)
+                    payload['bitfield'] = parseBitfield(data.slice(5))
+                    break;
+                case 6: case 8:
+                    payload['index'] = data.readUInt32BE(5);
+                    payload['begin'] = data.readUInt32BE(9);
+                    payload['length'] = data.readUInt32BE(13);
+                    break;
+                case 7:
+                    console.log("PIECE")
+                    payload['index'] = data.readUInt32BE(5);
+                    payload['begin'] = data.readUInt32BE(9);
+                    payload['block'] = data.slice(13);
+                    break;
+            }
+        }
+    }
+    return { type: messageId[id] ? messageId[id] : 'ignore', payload: payload, size: len, id: id, len: len }
+}
 module.exports = {
+    parseResponse,
     piece,
     keepAlive,
     interested,
@@ -173,5 +229,6 @@ module.exports = {
     request,
     cancel,
     handshake,
-    parseHandshake
+    parseHandshake,
+    messageId
 }

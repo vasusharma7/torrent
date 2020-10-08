@@ -80,7 +80,7 @@ function parseConnResp(resp) {
 }
 
 function buildAnnounceReq(torrent, connId) {
-  console.log("building announce", connId.length)
+  console.log("building announce")
   //should be 98 but accepting 100 ?? -
 
   const buf = Buffer.alloc(100);
@@ -140,7 +140,7 @@ function parseAnnounceResp(resp) {
   var peers = resp.slice(20);
   var offset = 0;
   while (offset < peers.length) {
-    console.log(peers.slice(offset, offset + 6))
+    // console.log(peers.slice(offset, offset + 6))
     var ip = peers.slice(offset, offset + 4).join(".")
     var port = peers.readUInt16BE(offset + 4)
     offset += 6;
