@@ -1,0 +1,25 @@
+{
+  "name": "torrent",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "bencode": "^2.0.1",
+    "bignum": "^0.13.1",
+    "random-bytes-seed": "^1.0.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vasusharma7/torrent.git"
+  },
+  "author": "Vasu Sharma",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/vasusharma7/torrent/issues"
+  },
+  "homepage": "https://github.com/vasusharma7/torrent#readme"
+}

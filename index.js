@@ -2,11 +2,15 @@ const torrentFile = require("./src/torrent-file/parse-torrent-file");
 const torrentUtils = require("./src/utils/torrent-file-utils")
 const connection = require("./src/connection");
 const { torrent, pieces, pieceLen } = torrentFile.init(process.argv[2])
+const fs = require("fs");
 
 connection.Peer.prototype.pieces = pieces;
-connection.Peer.prototype.piecesLen = pieceLen;
+connection.Peer.prototype.pieceLen = pieceLen;
 connection.Peer.prototype.pieceTracker = new Array(pieces.length).fill(0);
 connection.Peer.prototype.downloaded = new Array(pieces.length).fill(0);
+connection.Peer.prototype.file = fs.openSync(process.cwd() + "/" + torrent.info.name, "w");
+
+// connection.Peer.prototype.downloaded = 0
 
 // const axios = require("axios")
 // let piecesCount = new Array(pieces.length).fill(0);
@@ -24,6 +28,9 @@ torrentFile.parse(torrent, (parsed) => {
             connectedPeers.push(resp)
         })
     })
+    // allPeers[3].execute((resp) => {
+    //     connectedPeers.push(resp)
+    // })
 
 
 

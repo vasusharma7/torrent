@@ -29,14 +29,14 @@ module.exports.init = (filename) => {
     //         console.log('created new file');
     //     });
     // }
-    const peiceLen = torrent.info['piece length']
+    const peiceLen = torrent.info.length ? torrent.info.length : torrent.info['piece length']
     // console.log(torrent.info['piece length'])
     let pieces = [];
     const pieceHash = torrent.info.pieces
     for (let offset = 0; offset < pieceHash.length; offset += 20) {
         pieces.push(pieceHash.slice(offset, offset + 20))
     }
-    // console.log(pieces)
+    // console.log(torrent.info.files[0].path.toString())
     return { torrent: torrent, pieces: pieces, pieceLen: peiceLen };
 }
 module.exports.parse = (torrent, callback) => {
