@@ -2,7 +2,23 @@ const net = require('net');
 const messages = require("./utils/messages");
 const fs = require("fs");
 const process = require("process");
-const { le } = require('bignum');
+const { PriorityQueue } = require("./utils/priority-queue");
+class Piece {
+
+    constuctor(index, count) {
+        this.downloaded = false;
+        this.index = index;
+        this.have = 0;
+        this.count = count;
+    }
+}
+const numericCompare = (a, b) => (a > b ? 1 : a < b ? -1 : 0);
+
+const comparator = (a, b) => {
+    const x = numericCompare(a.count, b.count);
+    const y = numericCompare(a.index, b.index);
+    return x ? x : y;
+};
 
 class Torrent {
     constructor(pieces,
@@ -13,12 +29,15 @@ class Torrent {
         this.pieceTracker = new Array(pieces.length).fill(0);
         this.downloaded = new Array(pieces.length).fill(0);
         this.torrent = torrent;
-
     }
 }
-
-class Peer {
-    constructor(peer, torrent, pieces, pieceLen) {
+    Torrent.prototype.queue = new PriorityQueue(comparator);
+class Peer extends Torrent {
+    constructor(peer, torrent, pieces,
+        pieceLen) {
+        super(pieces,
+            pieceLen,
+            torrent);
         this.pieces = []
         this.pieceTracker = []
         this.torrent = torrent
@@ -70,8 +89,8 @@ class Peer {
         switch (parsed.type) {
             case "handshake":
                 console.log("handshake", this.info.ip)
-                this.socket.write(messages.unChoke())
-                this.socket.write(messages.interested())
+                // this.socket.write(messages.unChoke())
+                // this.socket.write(messages.interested())
                 break;
             case "bitfield":
                 console.log("MY torrent ", parsed.len, this.info.ip);
@@ -112,6 +131,7 @@ class Peer {
                 console.log("cancel", this.info.ip);
                 break;
             case "unchoke":
+                // this.buildQueue();
                 console.log("You are unchoked")
                 this.download()
                 break;

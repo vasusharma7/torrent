@@ -1,14 +1,14 @@
 const torrentFile = require("./src/torrent-file/parse-torrent-file");
 const torrentUtils = require("./src/utils/torrent-file-utils")
-const connection = require("./src/connection");
+const { Peer } = require("./src/connection");
 const { torrent, pieces, pieceLen } = torrentFile.init(process.argv[2])
 const fs = require("fs");
 
-connection.Peer.prototype.pieces = pieces;
-connection.Peer.prototype.pieceLen = pieceLen;
-connection.Peer.prototype.pieceTracker = new Array(pieces.length).fill(0);
-connection.Peer.prototype.downloaded = new Array(pieces.length).fill(0);
-connection.Peer.prototype.file = fs.openSync(process.cwd() + "/" + torrent.info.name, "w");
+Peer.prototype.pieces = pieces;
+Peer.prototype.pieceLen = pieceLen;
+Peer.prototype.pieceTracker = new Array(pieces.length).fill(0);
+Peer.prototype.downloaded = new Array(pieces.length).fill(0);
+Peer.prototype.file = fs.openSync(process.cwd() + "/" + torrent.info.name, "w");
 
 // connection.Peer.prototype.downloaded = 0
 
@@ -20,7 +20,7 @@ torrentFile.parse(torrent, (parsed) => {
     const allPeers = []
     const connectedPeers = []
     parsed.peers.forEach(peer => {
-        allPeers.push(new connection.Peer(peer, torrent, pieces, pieceLen))
+        allPeers.push(new Peer(peer, torrent, pieces, pieceLen))
     })
 
     allPeers.forEach(peer => {
