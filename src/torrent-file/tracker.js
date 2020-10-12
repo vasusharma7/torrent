@@ -4,7 +4,7 @@ const dgram = require("dgram");
 const Buffer = require("buffer").Buffer;
 const urlParse = require("url").parse;
 const crypto = require("crypto"); // 1
-const torrentUtils = require('../utils/torrent-file-utils');
+const torrentUtils = require("../utils/torrent-file-utils");
 const port = 6881;
 // const port = 0x1AE7
 
@@ -17,38 +17,37 @@ function respType(resp) {
 module.exports.getPeers = (torrent, callback) => {
   const socket = dgram.createSocket("udp4");
   const url = torrent.announce.toString("utf8");
+  // const url = torrent["announce-list"][0].toString("utf8");
 
   udpSend(socket, buildConnReq(), url);
-  socket.on("error", err => {
-    console.log(err)
-  })
+  socket.on("error", (err) => {
+    console.log(err);
+  });
   socket.on("message", (response) => {
-
     // console.log("response", response)
     switch (respType(response)) {
-      case "connect": const connResp = parseConnResp(response);
+      case "connect":
+        const connResp = parseConnResp(response);
         // console.log("connection response", connResp);
         const announceReq = buildAnnounceReq(torrent, connResp.connectionId);
         udpSend(socket, announceReq, url);
         break;
 
-      case "announce": const announceResp = parseAnnounceResp(response);
+      case "announce":
+        const announceResp = parseAnnounceResp(response);
         callback(announceResp.peers);
         break;
     }
   });
 };
 
-function udpSend(socket, message, rawUrl, callback = () => { }) {
-
+function udpSend(socket, message, rawUrl, callback = () => {}) {
   const url = urlParse(rawUrl);
   // console.log(url)
   // const port = url.port ? url.port : 80
   const port = url.port ? url.port : 80;
-  socket.send(message, 0, message.length, port, url.hostname, (err) => {
-  });
+  socket.send(message, 0, message.length, port, url.hostname, (err) => {});
 }
-
 
 function buildConnReq() {
   const buf = Buffer.alloc(16);
@@ -80,7 +79,7 @@ function parseConnResp(resp) {
 }
 
 function buildAnnounceReq(torrent, connId) {
-  console.log("building announce")
+  console.log("building announce");
   //should be 98 but accepting 100 ?? -
 
   const buf = Buffer.alloc(100);
@@ -110,9 +109,9 @@ function buildAnnounceReq(torrent, connId) {
   buf.writeUInt32BE(0, 76);
 
   //event = 0// 0: none; 1: completed; 2: started; 3: stopped
-  buf.writeUInt32BE(0, 80)
+  buf.writeUInt32BE(0, 80);
 
-  //ip address 
+  //ip address
   //set to zero because I want tracker to use the IP address of sender of this UDP packet i.e. ultimately my IP
   buf.writeUInt32BE(0, 84);
 
@@ -130,21 +129,21 @@ function buildAnnounceReq(torrent, connId) {
 
 function parseAnnounceResp(resp) {
   // console.log(resp)
-  var info = []
+  var info = [];
   info["action"] = resp.readUInt32BE(0);
   info["transactionId"] = resp.readUInt32BE(4);
   info["intervals"] = resp.readUInt32BE(8);
   info["leechers"] = resp.readUInt32BE(12);
   info["seeders"] = resp.readUInt32BE(16);
-  info['peers'] = []
+  info["peers"] = [];
   var peers = resp.slice(20);
   var offset = 0;
   while (offset < peers.length) {
     // console.log(peers.slice(offset, offset + 6))
-    var ip = peers.slice(offset, offset + 4).join(".")
-    var port = peers.readUInt16BE(offset + 4)
+    var ip = peers.slice(offset, offset + 4).join(".");
+    var port = peers.readUInt16BE(offset + 4);
     offset += 6;
-    info['peers'].push({ ip, port })
+    info["peers"].push({ ip, port });
   }
 
   return info;
