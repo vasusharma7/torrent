@@ -1,11 +1,20 @@
+const { piece } = require("./messages");
+
 const top = 0;
 const parent = i => ((i + 1) >>> 1) - 1;
 const left = i => (i << 1) + 1;
 const right = i => (i + 1) << 1;
+
+
+const pieceComparator = (a, b) => {
+    return a.count < b.count;
+};
+
 class PriorityQueue {
-    constructor(comparator = (a, b) => a > b) {
+
+    constructor() {
         this._heap = [];
-        this._comparator = comparator;
+        this._comparator = pieceComparator;
     }
     size() {
         return this._heap.length;
@@ -16,11 +25,9 @@ class PriorityQueue {
     peek() {
         return this._heap[top];
     }
-    push(...values) {
-        values.forEach(value => {
-            this._heap.push(value);
-            this._siftUp();
-        });
+    push(value) {
+        this._heap.push(value);
+        this._siftUp();
         return this.size();
     }
     pop() {

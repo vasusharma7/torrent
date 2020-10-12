@@ -5,6 +5,7 @@
   "main": "index.js",
   "type": "module",
   "dependencies": {
+    "axios": "^0.20.0",
     "bencode": "^2.0.1",
     "bignum": "^0.13.1",
     "priorityqueue": "^1.0.0",
