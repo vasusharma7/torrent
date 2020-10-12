@@ -1,9 +1,11 @@
 #references
 downloads
+tfiles
 allen-torrent
 node_modules
 .idea
-# *.torrent
+*.torrent
+
 
 # Logs
 logs
