@@ -208,7 +208,7 @@ class Peer extends Torrent {
         parsed.payload.block.copy(this.downloadedBuffer, offset);
         this.downloadedSize += parsed.payload.block.length;
         if (
-          this.lastPiece == parsed.payload.index
+          this.lastPiece === parsed.payload.index
             ? this.downloadedSize === this.getLastPieceLen()
             : this.downloadedSize === this.pieceLen
         ) {
@@ -221,12 +221,15 @@ class Peer extends Torrent {
             )
           ) {
             let fd = this.getFD(parsed.payload.index);
-            let data = this.downloadedBuffer;
+            let data =
+              this.lastPiece == parsed.payload.index
+                ? this.downloadedBuffer.slice(0, this.getLastPieceLen())
+                : this.downloadedBuffer;
             fs.write(
               fd,
               data,
               0,
-              this.downloadedBuffer.length,
+              data.length,
               parsed.payload.index * this.pieceLen,
               async (err, written, buffer) => {
                 if (err) {
