@@ -8,7 +8,7 @@ module.exports.init = (filename) => {
   const torrent = bencode.decode(fs.readFileSync(filename));
   console.log("Announce: ", torrent.announce.toString("utf8"));
   let files = [];
-  // console.log(torrent);
+  console.log(torrent);
   const root = "/downloads/";
   if (torrent.info.files) {
     if (!fs.existsSync("./downloads/" + torrent.info.name)) {
@@ -42,6 +42,7 @@ module.exports.init = (filename) => {
   // console.log(torrent.info.files[0].path.toString())
   return { torrent: torrent, pieces: pieces, pieceLen: peiceLen, files: files };
 };
+
 module.exports.parse = async (torrent, callback) => {
   let urls = [torrent.announce.toString()];
   // let urls = [torrent["announce-list"][1].toString()]
@@ -71,7 +72,7 @@ module.exports.parse = async (torrent, callback) => {
         callback(peers);
       });
       // }
-    }, track * 2000);
+    }, track * 10000);
     track++;
   });
 };

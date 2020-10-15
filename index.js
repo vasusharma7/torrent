@@ -5,9 +5,9 @@ const { PriorityQueue } = require("./src/utils/priority-queue");
 const { torrent, pieces, pieceLen, files } = torrentFile.init(process.argv[2]);
 const fs = require("fs");
 
-Torrent.prototype.pieceTracker = new Array(pieces.length).fill(0);
+Torrent.prototype.pieceTracker = new Set();
 Torrent.prototype.queue = new PriorityQueue();
-Torrent.prototype.downloaded = new Array(pieces.length).fill(0);
+Torrent.prototype.downloaded = new Set();
 // Torrent.prototype.file = fs.openSync(process.cwd() + "/" + torrent.info.name, "w");
 Torrent.prototype.files = files;
 Torrent.prototype.connectedPeers = [];
