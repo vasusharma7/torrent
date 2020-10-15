@@ -14,9 +14,10 @@ function respType(resp) {
   if (action === 1) return "announce";
 }
 
-module.exports.getPeers = (torrent, callback) => {
+module.exports.getPeers = (torrent, url, callback) => {
   const socket = dgram.createSocket("udp4");
-  const url = torrent.announce.toString("utf8");
+  console.log(url);
+  // const url = torrent.announce.toString("utf8");
   // const url = torrent["announce-list"][0].toString("utf8");
 
   udpSend(socket, buildConnReq(), url);
@@ -43,9 +44,9 @@ module.exports.getPeers = (torrent, callback) => {
 
 function udpSend(socket, message, rawUrl, callback = () => {}) {
   const url = urlParse(rawUrl);
-  // console.log(url)
+  // console.log(url);
   // const port = url.port ? url.port : 80
-  const port = url.port ? url.port : 80;
+  let port = url.port ? url.port : 80;
   socket.send(message, 0, message.length, port, url.hostname, (err) => {});
 }
 

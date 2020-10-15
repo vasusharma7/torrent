@@ -13,8 +13,13 @@ Torrent.prototype.files = files;
 Torrent.prototype.connectedPeers = [];
 
 const allPeers = [];
-
+const PeerBuffer = [];
 torrentFile.parse(torrent, (peers) => {
+  if (Torrent.prototype.connectedPeers.length > 10) {
+    // PeerBuffer.push(peers);
+    console.log("Enough Peers");
+    // return;
+  }
   console.log("got the peers", peers);
   peers.forEach((peer) => {
     allPeers.push(new Peer(peer, torrent, pieces, pieceLen));
