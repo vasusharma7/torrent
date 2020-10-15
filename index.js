@@ -1,11 +1,16 @@
+const process = require("process");
 const torrentFile = require("./src/torrent-file/parse-torrent-file");
 const torrentUtils = require("./src/utils/torrent-file-utils");
 const { Peer, Torrent } = require("./src/connection");
 const { PriorityQueue } = require("./src/utils/priority-queue");
-const { torrent, pieces, pieceLen, files } = torrentFile.init(process.argv[2]);
-const fs = require("fs");
+const file = process.argv[2];
+if (!file) {
+  console.log("Please provide a torrent file in the arguement");
+  process.exit();
+}
+const { torrent, pieces, pieceLen, files } = torrentFile.init(file);
 
-Torrent.prototype.pieceTracker = new Set();
+Torrent.prototype.pieceTracker = new Array(pieces.length).fill(0);
 Torrent.prototype.queue = new PriorityQueue();
 Torrent.prototype.downloaded = new Set();
 // Torrent.prototype.file = fs.openSync(process.cwd() + "/" + torrent.info.name, "w");

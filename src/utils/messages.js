@@ -1,5 +1,5 @@
 const torrentUtils = require("./torrent-file-utils");
-const { parse } = require("path");
+const { bitLength } = require("bignum");
 // <pstrlen><pstr><reserved><info_hash><peer_id>
 const messageId = {
   0: "choke",
@@ -171,11 +171,19 @@ const parseHandshake = (data, torrent) => {
 };
 const parseBitfield = (bitfield) => {
   let parsed = [];
-  for (let i = 0; i < bitfield.length; i++) {
-    parsed.push(bitfield.readUInt8(i).toString(2));
+  for (let offset = 0; offset < bitfield.length; offset += 1) {
+    let temp = bitfield.readUInt8(offset).toString(2);
+    temp = temp.padStart(8, "0");
+    // console.log(temp);
+    parsed.push(temp);
   }
+  // for (let i = 0; i < bitfield.length; i++) {
+  //   parsed.push(bitfield.readUInt8(i).toString(2));
+  // }
   parsed = parsed.join("");
-  console.log(parsed.length);
+  // console.log("PARSED", parsed.length, parsed, bitfield.length, bitfield);
+  // console.log(parsed);
+  // console.log(bitfield);
   return parsed;
 };
 const parseResponse = (data, torrent) => {

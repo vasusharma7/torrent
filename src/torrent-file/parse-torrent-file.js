@@ -2,10 +2,15 @@ const fs = require("fs");
 const tracker = require("./tracker");
 const bencode = require("bencode");
 const process = require("process");
-const { off } = require("process");
-const { Torrent } = require("../connection");
 module.exports.init = (filename) => {
-  const torrent = bencode.decode(fs.readFileSync(filename));
+  let file = -1;
+  try {
+    file = fs.readFileSync(filename);
+  } catch (err) {
+    console.log("An error occured while opening torrent file", err.message);
+    process.exit();
+  }
+  const torrent = bencode.decode(file);
   console.log("Announce: ", torrent.announce.toString("utf8"));
   let files = [];
   console.log(torrent);
@@ -20,6 +25,8 @@ module.exports.init = (filename) => {
       console.log(name);
       if (!fs.existsSync(name)) {
         let path = process.cwd() + root + torrent.info.name + "/" + name;
+        // var shell = require('shelljs');
+        // shell.mkdir('-p', fullPath);
         let fd = fs.openSync(path, "w");
         files.push({ path: path, size: file.length, fd: fd });
       }

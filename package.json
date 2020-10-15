@@ -8,7 +8,8 @@
     "bencode": "^2.0.1",
     "bignum": "^0.13.1",
     "priorityqueue": "^1.0.0",
-    "random-bytes-seed": "^1.0.3"
+    "random-bytes-seed": "^1.0.3",
+    "shelljs": "^0.8.4"
   },
   "devDependencies": {},
   "scripts": {

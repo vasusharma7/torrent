@@ -19,6 +19,8 @@ class Torrent {
     this.pieces = pieces;
     this.pieceLen = pieceLen;
     this.torrent = torrent;
+    this.lastPieceLen;
+    this.lastPiece = pieces.length - 1;
   }
   buildQueue() {
     if (!this.queue.isEmpty()) {
@@ -50,7 +52,10 @@ class Torrent {
     //     console.log('abcd', temp.count, temp.index);
     // }
   }
-  verifyChecksum = (buffer, pieceHash) => {
+  verifyChecksum = (buffer, pieceHash, index) => {
+    if (index == this.lastPiece) {
+      buffer = buffer.slice(0, this.getLastPieceLen());
+    }
     const crypted = crypto.createHash("sha1").update(buffer).digest();
     console.log(crypted);
     console.log(buffer);
@@ -87,6 +92,7 @@ class Torrent {
     }
   };
   getFileLength = (index) => {
+    if (index == -1) index = this.files.length - 1;
     let downloaded = index * this.pieceLen;
     let offset = 0;
     for (let file of this.files) {
@@ -97,6 +103,9 @@ class Torrent {
       }
     }
   };
+  getLastPieceLen() {
+    return this.getFileLength(-1) - this.pieceLen * (this.pieces.length - 1);
+  }
 }
 class Peer extends Torrent {
   constructor(peer, torrent, pieces, pieceLen) {
@@ -176,11 +185,21 @@ class Peer extends Torrent {
           parsed.payload.bitfield.length,
           this.pieces.length
         );
+        console.log("start");
         const bitfield = parsed.payload.bitfield;
+        // for (let i = 0; i < this.pieceTracker.length; i++)
+        // console.log(
+        //   "hey",
+        //   this.pieceTracker[i],
+        //   bitfield[i],
+        //   this.pieces.length,
+        //   this.pieceTracker.length
+        // );
         for (let i = 0; i < this.pieces.length; i++) {
           this.pieceTracker[i] += parseInt(bitfield[i]);
           this.myPieces[i] += parseInt(bitfield[i]);
         }
+
         break;
       case "piece":
         // parsed.payload.index, parsed.payload.begin, parsed.payload.block
@@ -188,12 +207,17 @@ class Peer extends Torrent {
         const offset = parsed.payload.begin;
         parsed.payload.block.copy(this.downloadedBuffer, offset);
         this.downloadedSize += parsed.payload.block.length;
-        if (this.downloadedSize == this.pieceLen) {
+        if (
+          this.lastPiece == parsed.payload.index
+            ? this.downloadedSize === this.getLastPieceLen()
+            : this.downloadedSize === this.pieceLen
+        ) {
           console.log("A Piece is completed", parsed.payload.index);
           if (
             this.verifyChecksum(
               this.downloadedBuffer,
-              this.pieces[parsed.payload.index]
+              this.pieces[parsed.payload.index],
+              parsed.payload.index
             )
           ) {
             let fd = this.getFD(parsed.payload.index);
@@ -314,8 +338,8 @@ class Peer extends Torrent {
       console.log(
         "------------------------------------------------------------------------------"
       );
-      rem = this.pieceLen * this.pieces.length - getFileLength(this.current);
-      console.log("LAST PIECE", last);
+      rem = this.getFileLength(-1) - this.pieceLen * (this.pieces.length - 1);
+      console.log("LAST PIECE", rem);
       console.log(
         "------------------------------------------------------------------------------"
       );
@@ -336,30 +360,6 @@ class Peer extends Torrent {
       console.log(this.current, this.done);
       console.log("Queue - ", this.queue.size());
     }
-
-    // Peer.prototype.pieceTracker.indexOf(Math.min(...Peer.prototype.pieceTracker));
-    // let index = 0, begin = 0, length = 0, chunk = 0, offset = 0;
-    // for (let i = 0; i < Peer.prototype.pieceTracker.length; i += 1) {
-    //     let rem = Peer.prototype.pieceLen;
-    //     // cons`ole.log((Peer.prototype.downloaded[i] == 0), (Peer.prototype.pieceTracker[i] != 0))
-    //     if ((Peer.prototype.downloaded[i] == 0) && (Peer.prototype.pieceTracker[i] != 0)) {
-    //         console.log("-------IN DOWNLOAD-------", this.info.ip)
-    //         // await new Promise(r => setTimeout(r, 10000))
-    //         Peer.prototype.downloaded[i] = 1;
-    //         offset = 0;
-    //         while (rem > 0) {
-    //             chunk = Math.min(16384, rem)
-    //             rem -= chunk
-    //             index = i;
-    //             begin = offset;
-    //             length = chunk;
-    //             this.socket.write(messages.request({ index, begin, length }))
-    //             offset += chunk;
-    //         }
-    //         break;
-    //     }
-    //     return;
-    // }
   };
 }
 
