@@ -2,18 +2,6 @@ const net = require("net");
 const messages = require("./utils/messages");
 const fs = require("fs");
 const crypto = require("crypto");
-const { throws } = require("assert");
-const { le, neg } = require("bignum");
-const { off } = require("process");
-
-// class Piece {
-//     constuctor(index, count) {
-//         this.downloaded = false;
-//         this.index = index;
-//         this.have = 0;
-//         this.count = count;
-//     }
-// }
 
 class Torrent {
   constructor(pieces, pieceLen, torrent) {
@@ -46,12 +34,6 @@ class Torrent {
         console.log("current", info, key, this.pieceTracker.length);
       else this.queue.push({ index: key, count: info });
     });
-    // this.download();
-
-    // while (!this.queue.isEmpty()) {
-    //     let temp = this.queue.pop();
-    //     console.log('abcd', temp.count, temp.index);
-    // }
   }
   verifyChecksum = (buffer, pieceHash, index) => {
     if (index == this.lastPiece) {
@@ -123,6 +105,7 @@ class Torrent {
     return this.getFileLength(-1) - this.pieceLen * (this.pieces.length - 1);
   }
 }
+
 class Peer extends Torrent {
   constructor(peer, torrent, pieces, pieceLen) {
     super(pieces, pieceLen, torrent);
@@ -138,6 +121,7 @@ class Peer extends Torrent {
     this.downloadedSize = 0;
     this.choked = true;
   }
+
   msgLen = (data) => {
     if (!this.handshake) {
       return 49 + data.readUInt8(0);
@@ -145,6 +129,7 @@ class Peer extends Torrent {
       return 4 + data.readUInt32BE(0);
     }
   };
+
   execute = (callback) => {
     this.socket = net.createConnection(
       { host: this.info.ip, port: this.info.port },
@@ -157,6 +142,7 @@ class Peer extends Torrent {
     this.socket.on("connect", () => {
       this.socket.write(messages.handshake(this.torrent));
     });
+
     this.socket.on("error", (err) => {
       let index = Torrent.prototype.connectedPeers.indexOf(this);
       Torrent.prototype.connectedPeers.splice(index, 1);
@@ -173,11 +159,7 @@ class Peer extends Torrent {
         this.buffer.length > 4 &&
         this.buffer.length >= this.msgLen(this.buffer)
       ) {
-        // console.log(
-        //   "getting buffer",
-        //   this.buffer.length,
-        //   this.msgLen(this.buffer)
-        // );
+        // console.log("getting buffer",this.buffer.length,this.msgLen(this.buffer));
         this.parseData(this.buffer.slice(0, this.msgLen(this.buffer)));
         this.buffer = this.buffer.slice(this.msgLen(this.buffer));
         this.handshake = true;
@@ -189,130 +171,19 @@ class Peer extends Torrent {
     const parsed = messages.parseResponse(data, this.torrent);
     switch (parsed.type) {
       case "handshake":
-        console.log("handshake", this.info.ip);
-        // this.socket.write(messages.unChoke());-------------------------------------
-        this.socket.write(messages.interested());
+        this.handleHandshake(parsed);
         break;
       case "bitfield":
-        console.log(
-          "BITFIELD ",
-          parsed.len,
-          this.info.ip,
-          parsed.payload.bitfield.length,
-          this.pieces.length
-        );
-        console.log("start");
-        const bitfield = parsed.payload.bitfield;
-        // for (let i = 0; i < this.pieceTracker.length; i++)
-        // console.log(
-        //   "hey",
-        //   this.pieceTracker[i],
-        //   bitfield[i],
-        //   this.pieces.length,
-        //   this.pieceTracker.length
-        // );
-        for (let i = 0; i < this.pieces.length; i++) {
-          this.pieceTracker[i] += parseInt(bitfield[i]);
-          this.myPieces[i] += parseInt(bitfield[i]);
-        }
-
+        this.handleBitfield(parsed);
         break;
       case "piece":
-        // parsed.payload.index, parsed.payload.begin, parsed.payload.block
-        console.log("GOT A PIECE !! ALERT !!", this.info.ip);
-        const offset = parsed.payload.begin;
-        parsed.payload.block.copy(this.downloadedBuffer, offset);
-        this.downloadedSize += parsed.payload.block.length;
-        if (
-          this.lastPiece === parsed.payload.index
-            ? this.downloadedSize === this.getLastPieceLen()
-            : this.downloadedSize === this.pieceLen
-        ) {
-          console.log("A Piece is completed", parsed.payload.index);
-          if (
-            this.verifyChecksum(
-              this.downloadedBuffer,
-              this.pieces[parsed.payload.index],
-              parsed.payload.index
-            )
-          ) {
-            let file = this.getFD(parsed.payload.index);
-            let data =
-              this.lastPiece == parsed.payload.index
-                ? this.downloadedBuffer.slice(0, this.getLastPieceLen())
-                : this.downloadedBuffer;
-            let length = data.length;
-            let offset = this.getFileOffset(parsed.payload.index);
-            let multiple = offset + data.length > file.size;
-            let data2 = null;
-            let length2 = null;
-            if (multiple) {
-              console.log("multiple file boundary");
-              length = file.size - offset;
-              data2 = data.slice(length);
-              length2 = offset + data.length - file.size;
-              data = data.slice(0, length);
-            }
-            fs.write(
-              file.fd,
-              data,
-              0,
-              length,
-              offset,
-              async (err, written, buffer) => {
-                if (err) {
-                  console.log(err);
-                } else {
-                  // console.log(written, buffer)
-                  this.downloaded.add(parsed.payload.index);
-                  console.log(data, this.pieceLen, this.info.ip);
-                }
-              }
-            );
-            //do this by considering the next file length !! and file descriptor
-            //next file length is important as the extra length in the data received of a peice may traverse/encompass various files
-            //test file TempleOS.iso
-            if (multiple) {
-              fs.write(
-                this.getFD(parsed.payload.index + 1).fd,
-                data2,
-                0,
-                length2,
-                0,
-                async (err, written, buffer) => {
-                  if (err) {
-                    console.log(err);
-                  } else {
-                    // console.log(written, buffer)
-                    this.downloaded.add(parsed.payload.index);
-                    console.log(data2, length2);
-                  }
-                }
-              );
-            }
-          } else {
-            console.log("checksum failed");
-          }
-          this.done = 0;
-          this.downloadedSize = 0;
-          this.store = this.downloadedBuffer;
-          this.downloadedBuffer = Buffer.alloc(this.pieceLen);
-          this.current = -1;
-        }
-        this.download();
-
+        this.handlePiece(parsed);
         break;
       case "have":
-        // this.pieceTracker[parseInt(parsed.payload.index)] = (parseInt(this.pieceTracker.charAt(parseInt(parsed.payload.index))) + 1).toString();
-        // console.log("have", parsed.payload.index, this.info.ip);
-        const index = parseInt(parsed.payload.index);
-        this.pieceTracker[index] += 1;
-        this.myPieces[index] += 1;
-        // this.buildQueue(this.current);
-        // this.download();
+        this.handleHave(parsed);
         break;
       case "ignore":
-        console.log("ignore", parsed.id, parsed.len, this.info.ip);
+        console.log("ignore - keep alive", parsed.id, parsed.len, this.info.ip);
         break;
       case "request":
         console.log("request", this.info.ip);
@@ -321,27 +192,133 @@ class Peer extends Torrent {
         console.log("cancel", this.info.ip);
         break;
       case "unchoke":
-        this.choked = false;
-        console.log("You are unchoked");
-        // this.socket.write(messages.interested());
-        this.buildQueue();
-        this.download();
+        this.handleUnChoke(parsed);
         break;
       case "choke":
-        this.choked = true;
-        console.log("You are choked by - ");
-        let ind = Torrent.prototype.connectedPeers.indexOf(this);
-        Torrent.prototype.connectedPeers.splice(ind, 1);
-        console.log("connected peers", Torrent.prototype.connectedPeers.length);
-        console.log(this.info.ip);
-        this.socket.end();
+        this.handleChoke(parsed);
         break;
       default:
         console.log(parsed.type, parsed.id, parsed.len, this.info.ip);
         break;
     }
   };
-
+  handleHandshake = (parsed) => {
+    console.log("handshake", this.info.ip);
+    this.socket.write(messages.interested());
+  };
+  handleBitfield = (parsed) => {
+    console.log(
+      "BITFIELD ",
+      parsed.len,
+      this.info.ip,
+      parsed.payload.bitfield.length,
+      this.pieces.length
+    );
+    const bitfield = parsed.payload.bitfield;
+    for (let i = 0; i < this.pieces.length; i++) {
+      this.pieceTracker[i] += parseInt(bitfield[i]);
+      this.myPieces[i] += parseInt(bitfield[i]);
+    }
+  };
+  handleHave = (parsed) => {
+    const index = parseInt(parsed.payload.index);
+    this.pieceTracker[index] += 1;
+    this.myPieces[index] += 1;
+  };
+  handleUnChoke = (parsed) => {
+    this.choked = false;
+    console.log("You are unchoked");
+    this.buildQueue();
+    this.download();
+  };
+  handleChoke = (parsed) => {
+    this.choked = true;
+    console.log("You are choked by - ");
+    let ind = Torrent.prototype.connectedPeers.indexOf(this);
+    Torrent.prototype.connectedPeers.splice(ind, 1);
+    console.log("connected peers", Torrent.prototype.connectedPeers.length);
+    console.log(this.info.ip);
+    this.socket.end();
+  };
+  savePiece = (parsed) => {
+    let file = this.getFD(parsed.payload.index);
+    let data =
+      this.lastPiece == parsed.payload.index
+        ? this.downloadedBuffer.slice(0, this.getLastPieceLen())
+        : this.downloadedBuffer;
+    let length = data.length;
+    let offset = this.getFileOffset(parsed.payload.index);
+    let multiple = offset + data.length > file.size;
+    let data2 = null;
+    let length2 = null;
+    if (multiple) {
+      console.log("multiple file boundary");
+      length = file.size - offset;
+      data2 = data.slice(length);
+      length2 = offset + data.length - file.size;
+      data = data.slice(0, length);
+    }
+    fs.write(file.fd, data, 0, length, offset, async (err, written, buffer) => {
+      if (err) {
+        console.log(err);
+      } else {
+        // console.log(written, buffer)
+        this.downloaded.add(parsed.payload.index);
+        console.log(data, this.pieceLen, this.info.ip);
+      }
+    });
+    //do this by considering the next file length !! and file descriptor
+    //next file length is important as the extra length in the data received of a peice may traverse/encompass various files
+    //test file TempleOS.iso
+    if (multiple) {
+      fs.write(
+        this.getFD(parsed.payload.index + 1).fd,
+        data2,
+        0,
+        length2,
+        0,
+        async (err, written, buffer) => {
+          if (err) {
+            console.log(err);
+          } else {
+            // console.log(written, buffer)
+            this.downloaded.add(parsed.payload.index);
+            console.log(data2, length2);
+          }
+        }
+      );
+    }
+  };
+  handlePiece = (parsed) => {
+    console.log("GOT A PIECE !! ALERT !!", this.info.ip);
+    const offset = parsed.payload.begin;
+    parsed.payload.block.copy(this.downloadedBuffer, offset);
+    this.downloadedSize += parsed.payload.block.length;
+    if (
+      this.lastPiece === parsed.payload.index
+        ? this.downloadedSize === this.getLastPieceLen()
+        : this.downloadedSize === this.pieceLen
+    ) {
+      console.log("A Piece is completed", parsed.payload.index);
+      if (
+        this.verifyChecksum(
+          this.downloadedBuffer,
+          this.pieces[parsed.payload.index],
+          parsed.payload.index
+        )
+      ) {
+        this.savePiece(parsed);
+      } else {
+        console.log("checksum failed");
+      }
+      this.done = 0;
+      this.downloadedSize = 0;
+      this.store = this.downloadedBuffer;
+      this.downloadedBuffer = Buffer.alloc(this.pieceLen);
+      this.current = -1;
+    }
+    this.download();
+  };
   download = () => {
     if (this.choked) return;
     // await new Promise(r => setTimeout(r, 4000));
@@ -349,7 +326,9 @@ class Peer extends Torrent {
       `Progress: ${(this.downloaded.size * this.pieceLen) / 1024}/${
         (this.pieces.length * this.pieceLen) / 1024
       }
-       Progress: ${(this.downloaded.size / this.pieces.length) * 100}%
+       Progress: ${((this.downloaded.size / this.pieces.length) * 100).toFixed(
+         2
+       )} %
       `
     );
     this.getStatistics();
