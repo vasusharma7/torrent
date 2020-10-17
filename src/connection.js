@@ -3,7 +3,8 @@ const messages = require("./utils/messages");
 const fs = require("fs");
 const crypto = require("crypto");
 const { throws } = require("assert");
-const { le } = require("bignum");
+const { le, neg } = require("bignum");
+const { off } = require("process");
 
 // class Piece {
 //     constuctor(index, count) {
@@ -87,12 +88,27 @@ class Torrent {
       offset += file.size;
       if (offset >= downloaded) {
         console.log(file.fd);
-        return file.fd;
+        return file;
+      }
+    }
+  };
+  getFileOffset = (index) => {
+    let downloaded = index * this.pieceLen;
+    let offset = 0;
+    for (let file of this.files) {
+      offset += file.size;
+      if (offset >= downloaded) {
+        offset = offset - file.size;
+        return downloaded - offset;
       }
     }
   };
   getFileLength = (index) => {
-    if (index == -1) index = this.files.length - 1;
+    if (index == -1) {
+      if (this.files.length === 1) return this.files[0].size;
+      return this.files.reduce((a, b) => a.size + b.size);
+    }
+
     let downloaded = index * this.pieceLen;
     let offset = 0;
     for (let file of this.files) {
@@ -220,17 +236,29 @@ class Peer extends Torrent {
               parsed.payload.index
             )
           ) {
-            let fd = this.getFD(parsed.payload.index);
+            let file = this.getFD(parsed.payload.index);
             let data =
               this.lastPiece == parsed.payload.index
                 ? this.downloadedBuffer.slice(0, this.getLastPieceLen())
                 : this.downloadedBuffer;
+            let length = data.length;
+            let offset = this.getFileOffset(parsed.payload.index);
+            let multiple = offset + data.length > file.size;
+            let data2 = null;
+            let length2 = null;
+            if (multiple) {
+              console.log("multiple file boundary");
+              length = file.size - offset;
+              data2 = data.slice(length);
+              length2 = offset + data.length - file.size;
+              data = data.slice(0, length);
+            }
             fs.write(
-              fd,
+              file.fd,
               data,
               0,
-              data.length,
-              parsed.payload.index * this.pieceLen,
+              length,
+              offset,
               async (err, written, buffer) => {
                 if (err) {
                   console.log(err);
@@ -241,6 +269,27 @@ class Peer extends Torrent {
                 }
               }
             );
+            //do this by considering the next file length !! and file descriptor
+            //next file length is important as the extra length in the data received of a peice may traverse/encompass various files
+            //also make files at correct paths recursively !!
+            if (multiple) {
+              fs.write(
+                this.getFD(parsed.payload.index + 1).fd,
+                data2,
+                0,
+                length2,
+                0,
+                async (err, written, buffer) => {
+                  if (err) {
+                    console.log(err);
+                  } else {
+                    // console.log(written, buffer)
+                    this.downloaded.add(parsed.payload.index);
+                    console.log(data2, length2);
+                  }
+                }
+              );
+            }
           } else {
             console.log("checksum failed");
           }
@@ -348,7 +397,7 @@ class Peer extends Torrent {
       );
     }
     let length = Math.min(16384, rem, rem - this.done);
-    if (length == rem - this.done) {
+    if (length === rem - this.done) {
       console.log("LEFT IS - ", rem - this.done);
     }
     if (this.done < rem) {

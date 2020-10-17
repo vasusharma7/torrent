@@ -2,6 +2,7 @@ const fs = require("fs");
 const tracker = require("./tracker");
 const bencode = require("bencode");
 const process = require("process");
+var shell = require("shelljs");
 module.exports.init = (filename) => {
   let file = -1;
   try {
@@ -13,8 +14,9 @@ module.exports.init = (filename) => {
   const torrent = bencode.decode(file);
   console.log("Announce: ", torrent.announce.toString("utf8"));
   let files = [];
-  console.log(torrent);
-  const root = "/downloads/";
+  // console.log(torrent.info.files);
+  // process.exit();
+  const root = "/";
   if (torrent.info.files) {
     if (!fs.existsSync("./downloads/" + torrent.info.name)) {
       fs.mkdirSync("./downloads/" + torrent.info.name);
@@ -24,11 +26,20 @@ module.exports.init = (filename) => {
       const name = file.path.toString("utf8");
       console.log(name);
       if (!fs.existsSync(name)) {
-        let path = process.cwd() + root + torrent.info.name + "/" + name;
-        // var shell = require('shelljs');
-        // shell.mkdir('-p', fullPath);
-        let fd = fs.openSync(path, "w");
-        files.push({ path: path, size: file.length, fd: fd });
+        let tempPath = name.replace(/,/g, "/").split("/");
+        let rootPath = `${process.cwd()}${root}${
+          torrent.info.name
+        }/${tempPath.slice(0, tempPath.length - 1).join("/")}`;
+
+        console.log(tempPath.join("/"));
+        console.log(rootPath);
+        let filePath = `${process.cwd()}${root}${
+          torrent.info.name
+        }/${tempPath.join("/")}`;
+        // let path = `${folderPath}/${name}`;
+        shell.mkdir("-p", rootPath);
+        let fd = fs.openSync(filePath, "w");
+        files.push({ path: filePath, size: file.length, fd: fd });
       }
     }
   } else {
@@ -36,6 +47,7 @@ module.exports.init = (filename) => {
     let fd = fs.openSync(path, "w");
     files.push({ path: path, size: torrent.info.length, fd: fd });
   }
+  console.log(files);
   // const peiceLen = torrent.info.length
   //   ? torrent.info.length
   //   : torrent.info["piece length"];
