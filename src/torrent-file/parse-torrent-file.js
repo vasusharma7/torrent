@@ -16,7 +16,7 @@ module.exports.init = (filename) => {
   let files = [];
   // console.log(torrent.info.files);
   // process.exit();
-  const root = "/";
+  const root = "/downloads/";
   if (torrent.info.files) {
     if (!fs.existsSync("./downloads/" + torrent.info.name)) {
       fs.mkdirSync("./downloads/" + torrent.info.name);

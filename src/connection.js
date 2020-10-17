@@ -271,7 +271,7 @@ class Peer extends Torrent {
             );
             //do this by considering the next file length !! and file descriptor
             //next file length is important as the extra length in the data received of a peice may traverse/encompass various files
-            //also make files at correct paths recursively !!
+            //test file TempleOS.iso
             if (multiple) {
               fs.write(
                 this.getFD(parsed.payload.index + 1).fd,
