@@ -1,10 +1,8 @@
-"use strict";
-
 const dgram = require("dgram");
 const Buffer = require("buffer").Buffer;
 const urlParse = require("url").parse;
 const crypto = require("crypto"); // 1
-const torrentUtils = require("../utils/torrent-file-utils");
+const torrentUtils = require("./torrent-file-utils");
 const port = 6881;
 // const port = 0x1AE7
 
@@ -137,6 +135,7 @@ function parseAnnounceResp(resp) {
   info["leechers"] = resp.readUInt32BE(12);
   info["seeders"] = resp.readUInt32BE(16);
   info["peers"] = [];
+  console.log("seeders", info["seeders"], "leechers", info["leechers"]);
   var peers = resp.slice(20);
   var offset = 0;
   while (offset < peers.length) {

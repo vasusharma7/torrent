@@ -24,15 +24,15 @@ module.exports.init = (filename) => {
     for (let file of torrent.info.files) {
       // console.log(file);
       const name = file.path.toString("utf8");
-      console.log(name);
+      // console.log(name);
       if (!fs.existsSync(name)) {
         let tempPath = name.replace(/,/g, "/").split("/");
         let rootPath = `${process.cwd()}${root}${
           torrent.info.name
         }/${tempPath.slice(0, tempPath.length - 1).join("/")}`;
 
-        console.log(tempPath.join("/"));
-        console.log(rootPath);
+        // console.log(tempPath.join("/"));
+        // console.log(rootPath);
         let filePath = `${process.cwd()}${root}${
           torrent.info.name
         }/${tempPath.join("/")}`;
@@ -47,7 +47,7 @@ module.exports.init = (filename) => {
     let fd = fs.openSync(path, "w");
     files.push({ path: path, size: torrent.info.length, fd: fd });
   }
-  console.log(files);
+  // console.log(files);
   // const peiceLen = torrent.info.length
   //   ? torrent.info.length
   //   : torrent.info["piece length"];

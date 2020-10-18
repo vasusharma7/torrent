@@ -6,3 +6,4 @@ https://nodejs.org/api/net.html#net_net_createconnection
 https://www.beautifulcode.co/blog/58-understanding-bittorrent-protocol
 https://en.wikipedia.org/wiki/Glossary_of_BitTorrent_terms#Piece
 https://medium.com/@aw.shubh/pythons-multithreading-vs-node-s-async-i-o-c15834626a8a
+http://www.kristenwidman.com/blog/71/how-to-write-a-bittorrent-client-part-2/
