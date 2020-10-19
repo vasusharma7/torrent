@@ -44,8 +44,8 @@ class Peer extends Torrent {
   execute = () => {
     this.socket = net.createConnection(
       { host: this.info.ip, port: this.info.port },
-      (data) => {
-        console.log("conected to a peer", data);
+      () => {
+        console.log("conected to a peer");
       }
     );
 
@@ -301,16 +301,7 @@ class Peer extends Torrent {
     // await new Promise(r => setTimeout(r, 4000));
     this.showProgress();
     this.getStatistics();
-    console.log(
-      `Total Peers - ${
-        Torrent.prototype.connectedPeers.length
-      }Connected Peers - ${
-        Torrent.prototype.connectedPeers.length -
-        Torrent.prototype.connectedPeers
-          .map((peer) => peer.choked)
-          .filter(Boolean).length
-      }`
-    );
+
     if (this.current === -1) {
       const store = [];
       let found = 0;
@@ -318,6 +309,7 @@ class Peer extends Torrent {
 
       console.log(this.info.ip, this.state.choked);
       do {
+        console.log("Queue Before - ", this.queue.size());
         if (!this.queue.isEmpty()) target = this.queue.pop();
         else {
           console.log("queue is empty");
@@ -333,6 +325,12 @@ class Peer extends Torrent {
         }
       } while (!found);
       this.current = target.index;
+      console.log("Queue After - ", this.queue.size());
+    }
+    if (this.downloaded.has(this.current)) {
+      console.log("This piecee is already downloaded");
+      this.current = -1;
+      this.download();
     }
     let rem = this.pieceLen;
     if (this.current === this.pieces.length - 1) {
