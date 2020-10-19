@@ -1,10 +1,12 @@
 const process = require("process");
 const torrentFile = require("./src/parse-torrent-file");
 const { EventEmitter: eventEmmiter } = require("./src/utils/events.js");
-// const torrentUtils = require("./src/utils/torrent-file-utils");
+const torrentUtils = require("./src/torrent-file-utils");
+const axios = require("axios");
 const { Peer } = require("./src/peer");
 const { Torrent } = require("./src/torrent");
 const { PriorityQueue } = require("./src/utils/priority-queue");
+const { encode } = require("punycode");
 const file = process.argv[2];
 
 if (!file) {
@@ -29,15 +31,11 @@ Torrent.prototype.chokedPeers = new Set();
 Torrent.prototype.unChokedPeers = new Set();
 Torrent.prototype.state = { uploadEvent: false, uploadStart: false };
 
-// const PeerBuffer = [];
-
 torrentFile.parse(torrent, (peers) => parseCallback(peers));
 const parseCallback = (peers) => {
   const allPeers = [];
   if (Torrent.prototype.connectedPeers.length > 10) {
-    // PeerBuffer.push(peers);
     console.log("Enough Peers");
-    // return;
   }
   console.log("got the peers", peers);
   peers.forEach((peer) => {
@@ -64,16 +62,22 @@ setInterval(() => {
 }, 30000);
 //---------------------------------------------------HTTP TRACKER-------------------------------------
 
-// console.log(torrent.announce.toString("utf8"))
-// console.log(torrent.info.toString("utf8"))
-// console.log(torrentUtils.left(torrent))
-// const size = torrent.info.files ?
-//     torrent.info.files.map(file => file.length).reduce((a, b) => a + b) :
-//     torrent.info.length;
-// var myurl = `${torrent.announce.toString("utf8")}?info_hash=${torrentUtils.getInfoHash(torrent)}&?peer_id=${torrentUtils.myPeerId()}&port=6881&downloaded=${0}&left=${size}`;
-// myurl = encodeURI(myurl)
-// console.log(myurl)
-// axios.get(myurl).then(res => console.log(res.data)).catch(err => console.log(err))
+// console.log(torrent.announce.toString("utf8"));
+// console.log(torrent.info.toString("utf8"));
+// console.log(torrentUtils.left(torrent));
+// const infoHash = encodeURI(torrentUtils.getInfoHash(torrent));
+// const myId = encodeURI(torrentUtils.myPeerId());
+// const size = torrent.info.files
+//   ? torrent.info.files.map((file) => file.length).reduce((a, b) => a + b)
+//   : torrent.info.length;
+// var myurl = `${torrent.announce.toString(
+//   "utf8"
+// )}?info_hash=${infoHash}&?peer_id=${myId}&port=6887&downloaded=0&left=${size}`;
+// console.log(myurl);
+// axios
+//   .get(myurl)
+//   .then((res) => console.log(res.data))
+//   .catch((err) => console.log(err));
 
 //--------------------------------------------------------------------------------------------------------
 // Peer.prototype.pieces = pieces;

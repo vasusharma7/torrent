@@ -1,10 +1,11 @@
 const crypto = require("crypto");
 const messages = require("./messages.js");
-const { callbackify } = require("util");
-const peer = require("./peer.js");
+const { toASCII } = require("punycode");
+
 //things to debug
 // queue size increasing
 // some discrepencies while new peers are added - bring in no piece situations
+
 class Torrent {
   constructor(pieces, pieceLen, torrent) {
     this.pieces = pieces;
@@ -46,16 +47,25 @@ class Torrent {
       return;
     }
     let speedMap = [];
+    let totalSpeed = 0;
     this.connectedPeers.forEach((peer) => {
+      totalSpeed += peer.track.speed;
       speedMap.push({ peer: peer, speed: peer.track.speed });
       console.log("speed", peer.info.ip, peer.track.speed);
     });
+    if (totalSpeed == 0) {
+      console.log("All Peers have Speed 0");
+      return;
+    }
     speedMap = speedMap.sort((a, b) => b.speed - a.speed);
     console.log("SPEED MAP");
-    console.table({ ip: speedMap.map((val) => val.info.ip), speed: val.speed });
+    console.table({
+      ip: speedMap.map((val) => val.peer.info.ip),
+      speed: speedMap.map((val) => val.speed),
+    });
     let turtles = speedMap.splice(4);
-    Torrent.prototype.chokedPeers = new Set(turtles);
-    Torrent.prototype.unChokedPeers = new Set(speedMap);
+    Torrent.prototype.chokedPeers = new Set(turtles.map((val) => val.peer));
+    Torrent.prototype.unChokedPeers = new Set(speedMap.map((val) => val.peer));
     for (let peer of turtles.map((obj) => obj.peer)) {
       console.log("slow", peer.info.ip);
       peer.amChoking = true;
@@ -75,8 +85,8 @@ class Torrent {
     console.log("optimistically unchoking");
     const numConnected = this.connectedPeers.length;
     if (numConnected <= 4) return;
-    const numChoked = this.chokedPeers.length; //4 max
-    const numUnchoked = this.unChokedPeers.length;
+    const numChoked = this.chokedPeers.size; //4 max
+    const numUnchoked = this.unChokedPeers.size;
     if (numUnchoked == 0) return;
 
     const chokedPeers = Array.from(Torrent.prototype.chokedPeers);
@@ -103,7 +113,7 @@ class Torrent {
     unChokedPeers[unChokeIndex].socket.write(messages.unChoke());
     unChokedPeers[unChokeIndex].state.amChoking = false;
     chokedPeers[chokeIndex].socket.write(messages.choke());
-    unChokedPeers[unChokeIndex].state.amChoking = trues;
+    unChokedPeers[unChokeIndex].state.amChoking = true;
 
     unChokedPeers.push(chokedPeers.splice(chokeIndex, 1));
     chokedPeers.push(unChokedPeers.splice(unChokeIndex, 1));
@@ -116,10 +126,11 @@ class Torrent {
       "```````````````````````````````````````````starting upload henceforth``````````````````````````````````"
     );
     this.connectedPeers.forEach((peer) => console.log(peer.info.ip));
-    // setInterval(this.topFour, 5000);
-    // setInterval(this.optimisticUnchoke, 3000);
+    setInterval(this.topFour, 3000);
+    setInterval(this.optimisticUnchoke, 5000);
   };
   buildQueue() {
+    const prev = this.queue.size();
     if (!this.queue.isEmpty()) {
       while (!this.queue.isEmpty()) {
         this.queue.pop();
@@ -127,10 +138,10 @@ class Torrent {
     }
     const current = [];
     this.connectedPeers.forEach((peer) => {
-      if (peer.choked === false) {
-        current.push(peer.current);
-        // console.log("current", peer.info.ip, peer.current);
-      }
+      // if (peer.choked === false) {
+      current.push(peer.current);
+      // console.log("current", peer.info.ip, peer.current);
+      // }
     });
     let downloaded = [];
     let noPiece = [];
@@ -140,13 +151,17 @@ class Torrent {
       else if (this.downloaded.has(key)) downloaded.push(key);
       else if (info === 0) noPiece.push(key);
       else if (current.includes(key)) {
+        //
       } else this.queue.push({ index: key, count: info });
     });
+    const now = this.queue.size();
     console.log("downloaded", downloaded);
     console.log("NAN", NAN);
     console.log("current", current);
     console.log("noPiece", downloaded);
+    console.log({ now: now, prev: prev, diff: now - prev });
   }
+
   verifyChecksum = (buffer, pieceHash, index) => {
     if (index == this.lastPiece) {
       buffer = buffer.slice(0, this.getLastPieceLen());
@@ -158,6 +173,14 @@ class Torrent {
     return false;
   };
   getStatistics() {
+    console.table({
+      "total peers": Torrent.prototype.connectedPeers.length,
+      "Connected Peers":
+        Torrent.prototype.connectedPeers.length -
+        Torrent.prototype.connectedPeers
+          .map((peer) => peer.choked)
+          .filter(Boolean).length,
+    });
     const miss = new Set();
     this.connectedPeers.forEach((peer) => {
       if (peer.choked === false) {
