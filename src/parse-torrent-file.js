@@ -3,6 +3,7 @@ const tracker = require("./tracker");
 const bencode = require("bencode");
 const process = require("process");
 var shell = require("shelljs");
+const { Torrent } = require("./torrent");
 module.exports.init = (filename) => {
   let file = -1;
   try {
@@ -38,13 +39,13 @@ module.exports.init = (filename) => {
         }/${tempPath.join("/")}`;
         // let path = `${folderPath}/${name}`;
         shell.mkdir("-p", rootPath);
-        let fd = fs.openSync(filePath, "w");
+        let fd = fs.openSync(filePath, "w+");
         files.push({ path: filePath, size: file.length, fd: fd });
       }
     }
   } else {
     let path = process.cwd() + root + torrent.info.name;
-    let fd = fs.openSync(path, "w");
+    let fd = fs.openSync(path, "w+");
     files.push({ path: path, size: torrent.info.length, fd: fd });
   }
   // console.log(files);
@@ -57,7 +58,12 @@ module.exports.init = (filename) => {
   for (let offset = 0; offset < pieceHash.length; offset += 20) {
     pieces.push(pieceHash.slice(offset, offset + 20));
   }
-  console.log(torrent.info["piece length"], pieces.length);
+  console.log(
+    "Piece Length - ",
+    torrent.info["piece length"],
+    " Num Pieces - ",
+    pieces.length
+  );
   // console.log(torrent.info.files[0].path.toString())
   return { torrent: torrent, pieces: pieces, pieceLen: peiceLen, files: files };
 };
@@ -72,26 +78,52 @@ module.exports.parse = async (torrent, callback) => {
   }
 
   let track = 1;
-  let store = [];
-  console.log(urls);
+  Torrent.prototype.store = [];
+  Torrent.prototype.urls = [...urls];
+  Torrent.prototype.contactCount = 0;
+  console.log(`Found ${urls.length - 1} trackers`);
   tracker.getPeers(torrent, urls.shift(), (peers) => {
-    store.push(...peers);
     callback(peers);
   });
-
-  urls.forEach((url) => {
+  setInterval(() => {
+    let url =
+      Torrent.prototype.urls[
+        Torrent.prototype.contactCount % Torrent.prototype.urls.length
+      ];
+    console.log(
+      `------------------------Attempting to connect to - ${url}-------------------------`
+    );
     setTimeout(() => {
-      // if (Torrent.prototype.connectedPeers < 50) {
-      // if (track == last) return;
-      console.log(
-        `------------------------Attempting to connect to - ${url}-------------------------`
-      );
       tracker.getPeers(torrent, url, (peers) => {
-        store.push(...peers);
+        Torrent.prototype.store.push(...peers);
+        if (
+          (Torrent.prototype.contactCount >= Torrent.prototype.urls.length &&
+            Torrent.prototype.connectedPeers.length !== 0) ||
+          Torrent.prototype.isComplete
+        ) {
+          console.log(
+            Torrent.prototype.contactCount,
+            Torrent.prototype.urls.length,
+            Torrent.prototype.connectedPeers.length
+          );
+          console.log("restricting callback");
+          return;
+        }
+        console.log(
+          Torrent.prototype.contactCount,
+          Torrent.prototype.urls.length,
+          Torrent.prototype.connectedPeers.length
+        );
         callback(peers);
+        console.log("permitting callback");
       });
-      // }
-    }, track * 10000);
-    track++;
-  });
+    }, ((Torrent.prototype.contactCount % Torrent.prototype.urls.length) + 1) * 2000);
+    Torrent.prototype.contactCount += 1;
+  }, 5000);
+  // ((Torrent.prototype.contactCount % Torrent.prototype.urls.length) + 1) * 2000
+
+  // urls.forEach((url) => {
+  //   setTimeout(() => {}, track * 10000);
+  //   track++;
+  // });
 };

@@ -6,7 +6,6 @@ const axios = require("axios");
 const { Peer } = require("./src/peer");
 const { Torrent } = require("./src/torrent");
 const { PriorityQueue } = require("./src/utils/priority-queue");
-const { encode } = require("punycode");
 const file = process.argv[2];
 
 if (!file) {
@@ -30,12 +29,17 @@ Torrent.prototype.interestedPeers = new Set();
 Torrent.prototype.chokedPeers = new Set();
 Torrent.prototype.unChokedPeers = new Set();
 Torrent.prototype.state = { uploadEvent: false, uploadStart: false };
+Torrent.prototype.isComplete = false;
 
 torrentFile.parse(torrent, (peers) => parseCallback(peers));
 const parseCallback = (peers) => {
   const allPeers = [];
   if (Torrent.prototype.connectedPeers.length > 10) {
     console.log("Enough Peers");
+  }
+  if (Torrent.prototype.isComplete) {
+    console.log("Download is complete");
+    return;
   }
   console.log("got the peers", peers);
   peers.forEach((peer) => {
@@ -54,12 +58,7 @@ const parseCallback = (peers) => {
   });
   console.log(Torrent.prototype.connectedPeers.length, allPeers.length);
 };
-setInterval(() => {
-  console.log("checking connected peers count");
-  if (Torrent.prototype.connectedPeers.length == 0) {
-    torrentFile.parse(torrent, (peers) => parseCallback(peers));
-  }
-}, 30000);
+
 //---------------------------------------------------HTTP TRACKER-------------------------------------
 
 // console.log(torrent.announce.toString("utf8"));

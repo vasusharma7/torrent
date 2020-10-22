@@ -1,6 +1,6 @@
 const crypto = require("crypto");
 const messages = require("./messages.js");
-const { toASCII } = require("punycode");
+const fs = require("fs");
 
 //things to debug
 // queue size increasing
@@ -43,7 +43,14 @@ class Torrent {
   topFour = () => {
     console.log("TOP 4");
     if (this.connectedPeers.length <= 4) {
-      console.log(this.connectedPeers.length);
+      console.log("less than 5 peers", this.connectedPeers.length);
+      this.connectedPeers.forEach((peer) => {
+        if (peer.amChoking) {
+          console.log("I am unchoking a peer");
+          peer.amChoking = false;
+          peer.socket.write(messages.unChoke());
+        }
+      });
       return;
     }
     let speedMap = [];
@@ -59,13 +66,15 @@ class Torrent {
     }
     speedMap = speedMap.sort((a, b) => b.speed - a.speed);
     console.log("SPEED MAP");
-    console.table({
-      ip: speedMap.map((val) => val.peer.info.ip),
-      speed: speedMap.map((val) => val.speed),
-    });
+    let display = [];
+    for (let i = 0; i < speedMap.length; i++) {
+      display.push({ ip: speedMap[i].peer.info.ip, speed: speedMap[i].speed });
+    }
+    console.table(display);
     let turtles = speedMap.splice(4);
     Torrent.prototype.chokedPeers = new Set(turtles.map((val) => val.peer));
     Torrent.prototype.unChokedPeers = new Set(speedMap.map((val) => val.peer));
+
     for (let peer of turtles.map((obj) => obj.peer)) {
       console.log("slow", peer.info.ip);
       peer.amChoking = true;
@@ -80,7 +89,7 @@ class Torrent {
       }
     }
   };
-  //debugging left
+
   optimisticUnchoke = () => {
     console.log("optimistically unchoking");
     const numConnected = this.connectedPeers.length;
@@ -94,16 +103,16 @@ class Torrent {
 
     const unChokeIndex = Math.floor(Math.random() * 100) % numUnchoked;
     const chokeIndex = Math.floor(Math.random() * 100) % numChoked;
-    console.log(
-      "unchoke",
-      unChokeIndex,
-      "choke",
-      chokeIndex,
-      "TUnC",
-      numUnchoked,
-      "TC",
-      numChoked
-    );
+    // console.log(
+    //   "unchoke",
+    //   unChokeIndex,
+    //   "choke",
+    //   chokeIndex,
+    //   "TUnC",
+    //   numUnchoked,
+    //   "TC",
+    //   numChoked
+    // );
     //yet to debug
     console.table({
       unChoked: unChokedPeers[unChokeIndex].info.ip,
@@ -126,10 +135,17 @@ class Torrent {
       "```````````````````````````````````````````starting upload henceforth``````````````````````````````````"
     );
     this.connectedPeers.forEach((peer) => console.log(peer.info.ip));
-    setInterval(this.topFour, 3000);
-    setInterval(this.optimisticUnchoke, 5000);
+    Torrent.prototype.top4I = setInterval(this.topFour, 3000);
+    Torrent.prototype.optChI = setInterval(this.optimisticUnchoke, 5000);
   };
-  buildQueue() {
+  closeConnections = () => {
+    this.connectedPeers.forEach((peer) => {
+      peer.socket.end();
+    });
+    Torrent.prototype.isComplete = true;
+    console.log("start seeding now :)");
+  };
+  buildQueue = () => {
     const prev = this.queue.size();
     if (!this.queue.isEmpty()) {
       while (!this.queue.isEmpty()) {
@@ -160,7 +176,7 @@ class Torrent {
     console.log("current", current);
     console.log("noPiece", downloaded);
     console.log({ now: now, prev: prev, diff: now - prev });
-  }
+  };
 
   verifyChecksum = (buffer, pieceHash, index) => {
     if (index == this.lastPiece) {
@@ -222,7 +238,7 @@ class Torrent {
     }
   };
   getFileLength = (index) => {
-    if (index == -1) {
+    if (index === -1) {
       if (this.files.length === 1) {
         console.log("here", this.files[0].size);
         return this.files[0].size;
@@ -245,9 +261,53 @@ class Torrent {
       }
     }
   };
-  getLastPieceLen() {
+  getLastPieceLen = () => {
     return this.getFileLength(-1) - this.pieceLen * (this.pieces.length - 1);
-  }
+  };
+  sendHaves = (peer) => {
+    const sent = [];
+    this.downloaded.forEach((piece) => {
+      peer.socket.write(messages.have(piece));
+      sent.push(piece);
+    });
+    console.log("Have sent to interested", peer.info.ip, "of - ", sent);
+  };
+  servePiece = (peer, { index, begin, length }) => {
+    if (length + begin > 16384) {
+      console.log("rejected");
+      return;
+    } //requesting more than 16KB, so rejected
+    if (!this.downloaded.has(index)) {
+      console.log("Requested Piece Doesn't Exist");
+      return;
+    }
+
+    let file = this.getFD(index);
+    let offset = this.getFileOffset(index);
+
+    let contents = Buffer.alloc(length);
+
+    let readLength = Math.min(length, file.size - offset - begin);
+
+    length = length - readLength;
+
+    let start = offset + begin;
+    fs.readSync(file.fd, contents, 0, readLength, start);
+    if (length !== 0) {
+      console.log("trancending boundary");
+      fs.readSync(
+        this.files[file.index + 1].fd,
+        contents,
+        readLength,
+        length,
+        0
+      );
+    }
+    console.log("Contents", contents, contents.length);
+    const payload = { index: index, begin: begin, block: contents };
+    peer.socket.write(messages.piece(payload));
+    //testing to be done !!
+  };
 }
 
 module.exports = { Torrent };
