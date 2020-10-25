@@ -322,6 +322,8 @@ class Peer extends Torrent {
       console.log("Download, choked");
       return;
     }
+    this.showProgress();
+    this.getStatistics();
     // await new Promise(r => setTimeout(r, 4000));
     console.log([
       { size: this.downloaded.size },
@@ -343,8 +345,6 @@ class Peer extends Torrent {
         console.log("has", i + 1, this.downloaded.has(i));
       }
     }
-    this.showProgress();
-    this.getStatistics();
 
     if (this.current === -1) {
       const store = [];
@@ -359,6 +359,8 @@ class Peer extends Torrent {
           this.downloaded.size,
           this.pieces.length
         );
+        //to be tested
+        setTimeout(this.download, 10000);
         return;
       }
       while (!found) {

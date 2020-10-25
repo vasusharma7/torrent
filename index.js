@@ -1,3 +1,4 @@
+require("./src/config");
 const process = require("process");
 const torrentFile = require("./src/parse-torrent-file");
 const { EventEmitter: eventEmmiter } = require("./src/utils/events.js");
