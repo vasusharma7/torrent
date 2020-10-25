@@ -1,7 +1,6 @@
 const crypto = require("crypto");
 const messages = require("./messages.js");
 const fs = require("fs");
-const { startSeed } = require("./seed");
 //things to debug
 // queue size increasing
 // some discrepencies while new peers are added - bring in no piece situations
@@ -143,7 +142,7 @@ class Torrent {
       peer.socket.end();
     });
     Torrent.prototype.isComplete = true;
-    startSeed();
+    // startSeed();
     console.log("start seeding now :)");
   };
   buildQueue = () => {

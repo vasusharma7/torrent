@@ -1,3 +1,5 @@
 module.exports = global.config = {
-  myPort: 6777,
+  port: 6777,
+  hostname: "0.0.0.0",
+  maxConnections: 10,
 };

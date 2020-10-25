@@ -2,6 +2,7 @@ require("./src/config");
 const process = require("process");
 const torrentFile = require("./src/parse-torrent-file");
 const { EventEmitter: eventEmmiter } = require("./src/utils/events.js");
+const Seeder = require("./src/seed");
 const torrentUtils = require("./src/torrent-file-utils");
 const axios = require("axios");
 const { Peer } = require("./src/peer");
@@ -15,6 +16,15 @@ if (!file) {
 }
 
 const { torrent, pieces, pieceLen, files } = torrentFile.init(file);
+let seeder = new Seeder(
+  global.config.hostname,
+  global.config.port,
+  global.config.maxConnections,
+  torrent,
+  pieces,
+  pieceLen
+);
+seeder.execute();
 
 Torrent.prototype.pieceTracker = new Array(pieces.length).fill(0);
 Torrent.prototype.queue = new PriorityQueue();

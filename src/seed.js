@@ -1,21 +1,15 @@
-require("./config");
 const { Torrent } = require("./torrent");
 const net = require("net");
-const { Socket } = require("dgram");
-const { cat } = require("shelljs");
-let port = global.config.myPort;
-let hostname = "0.0.0.0";
-let buffer = Buffer.alloc(0);
-msgLen = (data) => {
-  if (!this.handshake) {
-    return 49 + data.readUInt8(0);
-  } else {
-    return 4 + data.readUInt32BE(0);
-  }
-};
+
 class Seeder {
-  constructor(hostname, port, maxConnections) {
+  constructor(hostname, port, maxConnections, torrent, pieces, pieceLen) {
+    this.torrent = torrent;
+    this.pieces = pieces;
+    this.pieceLen = pieceLen;
+    this.hostname = hostname;
+    this.port = port;
     this.server = net.createServer();
+    this.clients = [];
     // emits when any error occurs -> calls closed event immediately after this.
     this.server.on("error", function (error) {
       console.log("Error: " + error);
@@ -42,14 +36,24 @@ class Seeder {
   }
   execute() {
     //static port allocation
-    this.server.listen(port, hostname);
+    this.server.listen(this.port, this.hostname);
 
     // emitted when new client connects
     let self = this;
     this.server.on("connection", function (socket) {
-      //this property shows the number of characters currently buffered to be written. (Number of characters is approximately equal to the number of bytes to be written, but the buffer may contain strings, and the strings are lazily encoded, so the exact number of bytes is not known.)
-      //Users who experience large or growing bufferSize should attempt to "throttle" the data flows in their program with pause() and resume().
-      console.log("Buffer size : " + socket.bufferSize);
+      let info = { port: socket.remotePort, ip: socket.remoteAddress };
+      console.log("A client Connected");
+      console.table(info);
+      let peer = new global.config.Peer(
+        info,
+        self.torrent,
+        self.pieces,
+        self.pieceLen,
+        socket
+      );
+      self.clients.push(peer);
+      Torrent.prototype.connectedPeers.push(peer);
+      peer.execute();
 
       console.log("---------server details -----------------");
 
@@ -61,106 +65,23 @@ class Seeder {
       console.log("Server ip :" + ipaddr);
       console.log("Server is IP4/IP6 : " + family);
 
+      console.log("--------------------------------------------");
+
       var lport = socket.localPort;
       var laddr = socket.localAddress;
       console.log("Server is listening at LOCAL port" + lport);
       console.log("Server LOCAL ip :" + laddr);
 
-      console.log("------------remote client info --------------");
-
-      var rport = socket.remotePort;
-      var raddr = socket.remoteAddress;
-      var rfamily = socket.remoteFamily;
-
-      console.log("REMOTE Socket is listening at port" + rport);
-      console.log("REMOTE Socket ip :" + raddr);
-      console.log("REMOTE Socket is IP4/IP6 : " + rfamily);
-
       console.log("--------------------------------------------");
-      // var no_of_connections =  server.getConnections(); // sychronous version
       self.server.getConnections((error, count) => {
         console.log(
           "Number of concurrent connections to the server : " + count
         );
       });
-
-      socket.setEncoding("utf8");
-
-      socket.setTimeout(800000, function () {
-        console.log("Socket timed out");
-      });
-
-      socket.on("data", function (data) {
-        try {
-          var bread = socket.bytesRead;
-          var bwrite = socket.bytesWritten;
-          console.log("Bytes read : " + bread);
-          console.log("Bytes written : " + bwrite);
-          console.log("Data sent to server : " + data);
-
-          //echo data
-          buffer = Buffer.concat([buffer, data]);
-          // console.log(buffer.length)
-          while (buffer.length > 4 && buffer.length >= msgLen(buffer)) {
-            // console.log("getting buffer",buffer.length,msgLen(buffer));
-            this.parseData(buffer.slice(0, msgLen(buffer)));
-            buffer = buffer.slice(msgLen(buffer));
-          }
-          // var is_kernel_buffer_full = socket.write("Data ::" + data);
-          // if (is_kernel_buffer_full) {
-          //   console.log(
-          //     "Data was flushed successfully from kernel buffer i.e written successfully!"
-          //   );
-          // } else {
-          //   socket.pause();
-          // }
-        } catch (err) {
-          console.log("\t\t\t~~~~~~~~error~~~~~~~~~~\n", err.message);
-        }
-      });
-
-      socket.on("drain", function () {
-        console.log(
-          "write buffer is empty now .. u can resume the writable stream"
-        );
-        socket.resume();
-      });
-
-      socket.on("error", function (error) {
-        console.log("Error : " + error);
-      });
-
-      socket.on("timeout", function () {
-        console.log("Socket timed out !");
-        socket.end("Timed out!");
-        // can call socket.destroy() here too.
-      });
-
-      socket.on("end", function (data) {
-        console.log("Socket ended from other end!");
-        console.log("End data : " + data);
-      });
-
-      socket.on("close", function (error) {
-        var bread = socket.bytesRead;
-        var bwrite = socket.bytesWritten;
-        console.log("Bytes read : " + bread);
-        console.log("Bytes written : " + bwrite);
-        console.log("Socket closed!");
-        if (error) {
-          console.log("Socket was closed coz of transmission error");
-        }
-      });
-
-      setTimeout(function () {
-        var isdestroyed = socket.destroyed;
-        console.log("Socket destroyed:" + isdestroyed);
-        socket.destroy();
-      }, 1200000);
     });
+
+    // var no_of_connections =  server.getConnections(); // sychronous version
   }
 }
-let seed = new Seeder(hostname, port, 10);
-seed.execute();
 
 module.exports = Seeder;
