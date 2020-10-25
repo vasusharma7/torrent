@@ -30,9 +30,6 @@ class Seeder {
 
     this.server.maxConnections = maxConnections;
 
-    //static port allocation
-    this.server.listen(port, hostname);
-
     this.islistening = this.server.listening;
 
     if (this.islistening) {
@@ -46,6 +43,9 @@ class Seeder {
     }, 5000000);
   }
   execute() {
+    //static port allocation
+    this.server.listen(port, hostname);
+
     // emitted when new client connects
     this.server.on("connection", function (socket) {
       //this property shows the number of characters currently buffered to be written. (Number of characters is approximately equal to the number of bytes to be written, but the buffer may contain strings, and the strings are lazily encoded, so the exact number of bytes is not known.)
