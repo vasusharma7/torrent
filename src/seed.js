@@ -2,6 +2,7 @@ require("./config");
 const { Torrent } = require("./torrent");
 const net = require("net");
 const { Socket } = require("dgram");
+const { cat } = require("shelljs");
 let port = global.config.myPort;
 let hostname = "0.0.0.0";
 let buffer = Buffer.alloc(0);
@@ -15,9 +16,6 @@ msgLen = (data) => {
 class Seeder {
   constructor(hostname, port, maxConnections) {
     this.server = net.createServer();
-    this.server.listen(port, hostname, function () {
-      console.log(`Seed Server is listening on ${hostname}:${port}`);
-    });
     // emits when any error occurs -> calls closed event immediately after this.
     this.server.on("error", function (error) {
       console.log("Error: " + error);
@@ -47,6 +45,7 @@ class Seeder {
     this.server.listen(port, hostname);
 
     // emitted when new client connects
+    let self = this;
     this.server.on("connection", function (socket) {
       //this property shows the number of characters currently buffered to be written. (Number of characters is approximately equal to the number of bytes to be written, but the buffer may contain strings, and the strings are lazily encoded, so the exact number of bytes is not known.)
       //Users who experience large or growing bufferSize should attempt to "throttle" the data flows in their program with pause() and resume().
@@ -54,7 +53,7 @@ class Seeder {
 
       console.log("---------server details -----------------");
 
-      var address = this.server.address();
+      var address = self.server.address();
       var port = address.port;
       var family = address.family;
       var ipaddr = address.address;
@@ -79,7 +78,7 @@ class Seeder {
 
       console.log("--------------------------------------------");
       // var no_of_connections =  server.getConnections(); // sychronous version
-      this.server.getConnections((error, count) => {
+      self.server.getConnections((error, count) => {
         console.log(
           "Number of concurrent connections to the server : " + count
         );
@@ -92,28 +91,32 @@ class Seeder {
       });
 
       socket.on("data", function (data) {
-        var bread = socket.bytesRead;
-        var bwrite = socket.bytesWritten;
-        console.log("Bytes read : " + bread);
-        console.log("Bytes written : " + bwrite);
-        console.log("Data sent to server : " + data);
+        try {
+          var bread = socket.bytesRead;
+          var bwrite = socket.bytesWritten;
+          console.log("Bytes read : " + bread);
+          console.log("Bytes written : " + bwrite);
+          console.log("Data sent to server : " + data);
 
-        //echo data
-        buffer = Buffer.concat([buffer, data]);
-        // console.log(buffer.length)
-        while (buffer.length > 4 && buffer.length >= msgLen(buffer)) {
-          // console.log("getting buffer",buffer.length,msgLen(buffer));
-          parseData(buffer.slice(0, msgLen(buffer)));
-          buffer = buffer.slice(msgLen(buffer));
+          //echo data
+          buffer = Buffer.concat([buffer, data]);
+          // console.log(buffer.length)
+          while (buffer.length > 4 && buffer.length >= msgLen(buffer)) {
+            // console.log("getting buffer",buffer.length,msgLen(buffer));
+            this.parseData(buffer.slice(0, msgLen(buffer)));
+            buffer = buffer.slice(msgLen(buffer));
+          }
+          // var is_kernel_buffer_full = socket.write("Data ::" + data);
+          // if (is_kernel_buffer_full) {
+          //   console.log(
+          //     "Data was flushed successfully from kernel buffer i.e written successfully!"
+          //   );
+          // } else {
+          //   socket.pause();
+          // }
+        } catch (err) {
+          console.log("\t\t\t~~~~~~~~error~~~~~~~~~~\n", err.message);
         }
-        // var is_kernel_buffer_full = socket.write("Data ::" + data);
-        // if (is_kernel_buffer_full) {
-        //   console.log(
-        //     "Data was flushed successfully from kernel buffer i.e written successfully!"
-        //   );
-        // } else {
-        //   socket.pause();
-        // }
       });
 
       socket.on("drain", function () {
