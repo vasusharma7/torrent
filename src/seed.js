@@ -50,12 +50,11 @@ class Seeder {
     this.server.on("connection", function (socket) {
       //this property shows the number of characters currently buffered to be written. (Number of characters is approximately equal to the number of bytes to be written, but the buffer may contain strings, and the strings are lazily encoded, so the exact number of bytes is not known.)
       //Users who experience large or growing bufferSize should attempt to "throttle" the data flows in their program with pause() and resume().
-      let server = this.server;
       console.log("Buffer size : " + socket.bufferSize);
 
       console.log("---------server details -----------------");
 
-      var address = server.address();
+      var address = this.server.address();
       var port = address.port;
       var family = address.family;
       var ipaddr = address.address;
@@ -80,7 +79,7 @@ class Seeder {
 
       console.log("--------------------------------------------");
       // var no_of_connections =  server.getConnections(); // sychronous version
-      server.getConnections((error, count) => {
+      this.server.getConnections((error, count) => {
         console.log(
           "Number of concurrent connections to the server : " + count
         );
