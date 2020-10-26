@@ -2,9 +2,10 @@ const fs = require("fs");
 const tracker = require("./tracker");
 const bencode = require("bencode");
 const process = require("process");
+const path = require("path");
 var shell = require("shelljs");
 const { Torrent } = require("./torrent");
-module.exports.init = (filename) => {
+module.exports.init = (filename, dest) => {
   let file = -1;
   try {
     file = fs.readFileSync(filename);
@@ -17,10 +18,11 @@ module.exports.init = (filename) => {
   let files = [];
   // console.log(torrent.info.files);
   // process.exit();
-  const root = "/downloads/";
+
   if (torrent.info.files) {
-    if (!fs.existsSync("./downloads/" + torrent.info.name)) {
-      fs.mkdirSync("./downloads/" + torrent.info.name);
+    const savePath = path.join(dest, torrent.info.name.toString("utf8"));
+    if (!fs.existsSync(savePath)) {
+      fs.mkdirSync(savePath);
     }
     for (let file of torrent.info.files) {
       // console.log(file);
@@ -28,16 +30,26 @@ module.exports.init = (filename) => {
       // console.log(name);
       if (!fs.existsSync(name)) {
         let tempPath = name.replace(/,/g, "/").split("/");
-        let rootPath = `${process.cwd()}${root}${
-          torrent.info.name
-        }/${tempPath.slice(0, tempPath.length - 1).join("/")}`;
+        let rootPath = path.join(
+          savePath,
+          torrent.info.name.toString("utf8"),
+          tempPath.slice(0, tempPath.length - 1).join("/")
+        );
+        // let rootPath = `${process.cwd()}${root}${
+        //   torrent.info.name
+        // }/${tempPath.slice(0, tempPath.length - 1).join("/")}`;
 
-        // console.log(tempPath.join("/"));
-        // console.log(rootPath);
-        let filePath = `${process.cwd()}${root}${
-          torrent.info.name
-        }/${tempPath.join("/")}`;
+        let filePath = path.join(
+          savePath,
+          torrent.info.name.toString("utf8"),
+          tempPath.join("/")
+        );
+
+        // `${process.cwd()}${root}${
+        //   torrent.info.name
+        // }/${tempPath.join("/")}`;
         // let path = `${folderPath}/${name}`;
+
         shell.mkdir("-p", rootPath);
         let fd = fs.openSync(filePath, "w+");
         files.push({ path: filePath, size: file.length, fd: fd });
@@ -82,6 +94,7 @@ module.exports.parse = async (torrent, callback) => {
   Torrent.prototype.urls = [...urls];
   Torrent.prototype.contactCount = 0;
   console.log(`Found ${urls.length - 1} trackers`);
+
   tracker.getPeers(torrent, urls.shift(), (peers) => {
     callback(peers);
   });

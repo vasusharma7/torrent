@@ -1,7 +1,7 @@
 const crypto = require("crypto");
 const bencode = require("bencode");
 var seed = require("random-bytes-seed");
-const bignum = require("bignum");
+// const toBufferBE = require("bigint-buffer").toBufferBE;
 crypto.randomBytes = seed("random-constant");
 
 module.exports.getInfoHash = (torrent) => {
@@ -27,8 +27,18 @@ module.exports.left = (torrent) => {
   const size = torrent.info.files
     ? torrent.info.files.map((file) => file.length).reduce((a, b) => a + b)
     : torrent.info.length;
+
+  var buf = new Buffer(8);
+  buf.fill(0);
+
+  buf.writeUInt32BE(size >> 8, 0); //write the high order bits (shifted over)
+  buf.writeUInt32BE(size & 0x00ff, 4); //write the low order bits
+
+  return buf;
+
   //   console.log(size);
   //   block.writeBigUInt64BE(BigInt(size));
   // return block
-  return bignum.toBuffer(size, { size: 8 });
+
+  // return toBufferBE(parseInt(size, 16), 8);
 };

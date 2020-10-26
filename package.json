@@ -6,9 +6,7 @@
   "dependencies": {
     "axios": "^0.20.0",
     "bencode": "^2.0.1",
-    "bignum": "^0.13.1",
     "death": "^1.1.0",
-    "priorityqueue": "^1.0.0",
     "random-bytes-seed": "^1.0.3",
     "shelljs": "^0.8.4"
   },

@@ -1,5 +1,5 @@
 const torrentUtils = require("./torrent-file-utils");
-const { bitLength } = require("bignum");
+
 // <pstrlen><pstr><reserved><info_hash><peer_id>
 const messageId = {
   0: "choke",
