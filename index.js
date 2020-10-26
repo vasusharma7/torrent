@@ -9,13 +9,16 @@ const { Peer } = require("./src/peer");
 const { Torrent } = require("./src/torrent");
 const { PriorityQueue } = require("./src/utils/priority-queue");
 const file = process.argv[2];
+const dest = process.argv[3];
 
 module.exports = startTorrent = (file, dest) => {
   if (!file) {
     console.log("Please provide a torrent file in the arguement");
     process.exit();
   }
-
+  if (!dest) {
+    dest = ".";
+  }
   const { torrent, pieces, pieceLen, files } = torrentFile.init(file, dest);
   let seeder = new Seeder(
     global.config.hostname,
@@ -72,7 +75,7 @@ module.exports = startTorrent = (file, dest) => {
   };
 };
 if (require.main === module) {
-  startTorrent(file, ".");
+  startTorrent(file, dest);
 }
 
 //---------------------------------------------------HTTP TRACKER-------------------------------------

@@ -21,6 +21,7 @@ module.exports.init = (filename, dest) => {
 
   if (torrent.info.files) {
     const savePath = path.join(dest, torrent.info.name.toString("utf8"));
+    console.log("path", path);
     if (!fs.existsSync(savePath)) {
       fs.mkdirSync(savePath);
     }
@@ -56,8 +57,8 @@ module.exports.init = (filename, dest) => {
       }
     }
   } else {
-    let path = process.cwd() + root + torrent.info.name;
-    let fd = fs.openSync(path, "w+");
+    let savePath = path.join(dest, torrent.info.name.toString("utf8"));
+    let fd = fs.openSync(savePath, "w+");
     files.push({ path: path, size: torrent.info.length, fd: fd });
   }
   // console.log(files);
