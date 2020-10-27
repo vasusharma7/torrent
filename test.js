@@ -4,7 +4,7 @@ class A {
   }
 
   static get() {
-    console.log("object", this.name);
+    if (global.config.debug) console.log("object", this.name);
   }
 }
 A.prototype.get();

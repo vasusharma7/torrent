@@ -14,20 +14,20 @@ function respType(resp) {
 
 module.exports.getPeers = (torrent, url, callback) => {
   const socket = dgram.createSocket("udp4");
-  console.log(url);
+  if (global.config.debug) console.log(url);
   // const url = torrent.announce.toString("utf8");
   // const url = torrent["announce-list"][0].toString("utf8");
 
   udpSend(socket, buildConnReq(), url);
   socket.on("error", (err) => {
-    console.log(err);
+    if (global.config.debug) console.log(err);
   });
   socket.on("message", (response) => {
-    // console.log("response", response)
+    // if(global.config.debug)console.log("response", response)
     switch (respType(response)) {
       case "connect":
         const connResp = parseConnResp(response);
-        // console.log("connection response", connResp);
+        // if(global.config.debug)console.log("connection response", connResp);
         const announceReq = buildAnnounceReq(torrent, connResp.connectionId);
         udpSend(socket, announceReq, url);
         break;
@@ -42,7 +42,7 @@ module.exports.getPeers = (torrent, url, callback) => {
 
 function udpSend(socket, message, rawUrl, callback = () => {}) {
   const url = urlParse(rawUrl);
-  // console.log(url);
+  // if(global.config.debug)console.log(url);
   // const port = url.port ? url.port : 80
   let port = url.port ? url.port : 80;
   socket.send(message, 0, message.length, port, url.hostname, (err) => {});
@@ -78,7 +78,7 @@ function parseConnResp(resp) {
 }
 
 function buildAnnounceReq(torrent, connId) {
-  console.log("building announce");
+  if (global.config.debug) console.log("building announce");
   //should be 98 but accepting 100 ?? -
 
   const buf = Buffer.alloc(100);
@@ -127,7 +127,7 @@ function buildAnnounceReq(torrent, connId) {
 }
 
 function parseAnnounceResp(resp) {
-  // console.log(resp)
+  // if(global.config.debug)console.log(resp)
   var info = [];
   info["action"] = resp.readUInt32BE(0);
   info["transactionId"] = resp.readUInt32BE(4);
@@ -135,11 +135,12 @@ function parseAnnounceResp(resp) {
   info["leechers"] = resp.readUInt32BE(12);
   info["seeders"] = resp.readUInt32BE(16);
   info["peers"] = [];
-  console.log("seeders", info["seeders"], "leechers", info["leechers"]);
+  if (global.config.debug)
+    console.log("seeders", info["seeders"], "leechers", info["leechers"]);
   var peers = resp.slice(20);
   var offset = 0;
   while (offset < peers.length) {
-    // console.log(peers.slice(offset, offset + 6))
+    // if(global.config.debug)console.log(peers.slice(offset, offset + 6))
     var ip = peers.slice(offset, offset + 4).join(".");
     var port = peers.readUInt16BE(offset + 4);
     offset += 6;

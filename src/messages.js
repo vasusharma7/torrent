@@ -14,7 +14,7 @@ const messageId = {
   9: "port",
 };
 const handshake = (torrent) => {
-  console.log("building handshake");
+  if (global.config.debug) console.log("building handshake");
 
   const buffer = Buffer.alloc(68);
   buffer.writeUInt8(19, 0);
@@ -28,7 +28,7 @@ const handshake = (torrent) => {
 };
 // keep-alive: <len=0000>
 const keepAlive = () => {
-  // console.log("building keepAlive")
+  // if(global.config.debug)console.log("building keepAlive")
 
   const buffer = Buffer.alloc(4);
   buffer.writeUInt32BE(0, 0);
@@ -36,7 +36,7 @@ const keepAlive = () => {
 };
 // choke: <len=0001><id=0>
 const choke = () => {
-  console.log("building Choke");
+  if (global.config.debug) console.log("building Choke");
 
   const buffer = Buffer.alloc(5);
 
@@ -47,7 +47,7 @@ const choke = () => {
 
 // unchoke: <len=0001><id=1>
 const unChoke = () => {
-  console.log("building UnChoke");
+  if (global.config.debug) console.log("building UnChoke");
 
   const buffer = Buffer.alloc(5);
 
@@ -58,7 +58,7 @@ const unChoke = () => {
 
 // interested: <len=0001><id=2>
 const interested = () => {
-  console.log("building interested");
+  if (global.config.debug) console.log("building interested");
 
   const buffer = Buffer.alloc(5);
 
@@ -69,7 +69,7 @@ const interested = () => {
 
 // not interested: <len=0001><id=3>
 const notInterested = () => {
-  console.log("building notInterested");
+  if (global.config.debug) console.log("building notInterested");
 
   const buffer = Buffer.alloc(5);
 
@@ -80,7 +80,7 @@ const notInterested = () => {
 
 // have: <len=0005><id=4><piece index>
 const have = (pieceIndex) => {
-  console.log("building have");
+  if (global.config.debug) console.log("building have");
 
   const buffer = Buffer.alloc(9);
 
@@ -93,7 +93,7 @@ const have = (pieceIndex) => {
 };
 // bitfield: <len=0001+X><id=5><bitfield>
 const bitfield = (payload) => {
-  console.log("building bitfield");
+  if (global.config.debug) console.log("building bitfield");
 
   const buffer = Buffer.alloc(5 + payload.length);
 
@@ -106,7 +106,7 @@ const bitfield = (payload) => {
 };
 // request: <len=0013 > <id=6 > <index><begin><length>
 const request = (payload) => {
-  console.log("building request", payload);
+  if (global.config.debug) console.log("building request", payload);
 
   const buffer = Buffer.alloc(17);
 
@@ -122,7 +122,7 @@ const request = (payload) => {
 };
 
 const piece = (payload) => {
-  console.log("building piece");
+  if (global.config.debug) console.log("building piece");
 
   const buffer = Buffer.alloc(13 + payload.block.length);
 
@@ -138,7 +138,7 @@ const piece = (payload) => {
 };
 // cancel <len=0013><id=8><index><begin><length>
 const cancel = () => {
-  console.log("building cancel");
+  if (global.config.debug) console.log("building cancel");
 
   const buffer = Buffer.alloc(17);
 
@@ -174,16 +174,16 @@ const parseBitfield = (bitfield) => {
   for (let offset = 0; offset < bitfield.length; offset += 1) {
     let temp = bitfield.readUInt8(offset).toString(2);
     temp = temp.padStart(8, "0");
-    // console.log(temp);
+    // if(global.config.debug)console.log(temp);
     parsed.push(temp);
   }
   // for (let i = 0; i < bitfield.length; i++) {
   //   parsed.push(bitfield.readUInt8(i).toString(2));
   // }
   parsed = parsed.join("");
-  // console.log("PARSED", parsed.length, parsed, bitfield.length, bitfield);
-  // console.log(parsed);
-  // console.log(bitfield);
+  // if(global.config.debug)console.log("PARSED", parsed.length, parsed, bitfield.length, bitfield);
+  // if(global.config.debug)console.log(parsed);
+  // if(global.config.debug)console.log(bitfield);
   return parsed;
 };
 const parseResponse = (data, torrent) => {
@@ -198,7 +198,7 @@ const parseResponse = (data, torrent) => {
         payload["index"] = data.readUInt32BE(5);
         break;
       case 5:
-        // console.log("LENGTH IS - ", len)
+        // if(global.config.debug)console.log("LENGTH IS - ", len)
         payload["bitfield"] = parseBitfield(data.slice(5));
         break;
       case 6:
@@ -208,7 +208,7 @@ const parseResponse = (data, torrent) => {
         payload["length"] = data.readUInt32BE(13);
         break;
       case 7:
-        // console.log("PIECE");
+        // if(global.config.debug)console.log("PIECE");
         payload["index"] = data.readUInt32BE(5);
         payload["begin"] = data.readUInt32BE(9);
         payload["block"] = data.slice(13);
@@ -216,7 +216,7 @@ const parseResponse = (data, torrent) => {
     }
   }
   if (!messageId[id]) {
-    console.log("length is - ", len);
+    if (global.config.debug) console.log("length is - ", len);
   }
   return {
     type: messageId[id] ? messageId[id] : "ignore",
