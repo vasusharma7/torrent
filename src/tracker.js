@@ -14,7 +14,7 @@ function respType(resp) {
 
 module.exports.getPeers = (torrent, url, callback) => {
   const socket = dgram.createSocket("udp4");
-  if (global.config.debug) console.log(url);
+  // if (global.config.debug) console.log(url);
   // const url = torrent.announce.toString("utf8");
   // const url = torrent["announce-list"][0].toString("utf8");
 

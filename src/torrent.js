@@ -3,6 +3,7 @@ const messages = require("./messages.js");
 const fs = require("fs");
 const { EventEmitter: eventEmmiter } = require("./utils/events.js");
 const { PriorityQueue } = require("./utils/priority-queue");
+const { le } = require("bignum");
 //things to debug
 // queue size increasing
 // some discrepencies while new peers are added - bring in no piece situations
@@ -60,8 +61,8 @@ class Torrent {
     this.connectedPeers.forEach((peer) => {
       totalSpeed += peer.track.speed;
       speedMap.push({ peer: peer, speed: peer.track.speed });
-      if (global.config.debug)
-        console.log("speed", peer.info.ip, peer.track.speed);
+      // if (global.config.debug)
+      //   console.log("speed", peer.info.ip, peer.track.speed);
     });
     if (totalSpeed == 0) {
       if (global.config.debug) console.log("All Peers have Speed 0");
@@ -79,12 +80,12 @@ class Torrent {
     Torrent.prototype.unChokedPeers = new Set(speedMap.map((val) => val.peer));
 
     for (let peer of turtles.map((obj) => obj.peer)) {
-      if (global.config.debug) console.log("slow", peer.info.ip);
+      // if (global.config.debug) console.log("slow", peer.info.ip);
       peer.amChoking = true;
       peer.socket.write(messages.choke());
     }
     for (let peer of speedMap.map((obj) => obj.peer)) {
-      if (global.config.debug) console.log("fast", peer.info.ip);
+      // if (global.config.debug) console.log("fast", peer.info.ip);
       if (peer.amChoking) {
         if (global.config.debug) console.log("I am unchoking a peer");
         peer.amChoking = false;
@@ -185,7 +186,12 @@ class Torrent {
     const crypted = crypto.createHash("sha1").update(buffer).digest();
     if (global.config.debug) console.log(crypted);
     if (global.config.debug) console.log(buffer);
-    if (!Buffer.compare(crypted, pieceHash)) return true;
+    if (!Buffer.compare(crypted, pieceHash)) {
+      if (global.config.debug) console.log("Checksum Sucessful");
+
+      return true;
+    }
+
     return false;
   };
   getStatistics() {
@@ -222,7 +228,7 @@ class Torrent {
       let file = this.files[i];
       offset += file.size;
       if (offset >= downloaded) {
-        if (global.config.debug) console.log(file.fd);
+        if (global.config.debug) console.log("file:", file.fd);
         return { index: i, ...file };
       }
     }
@@ -265,6 +271,7 @@ class Torrent {
   getLastPieceLen = () => {
     return this.getFileLength(-1) - this.pieceLen * (this.pieces.length - 1);
   };
+
   sendHaves = (peer) => {
     const sent = [];
     this.downloaded.forEach((piece) => {
@@ -295,21 +302,27 @@ class Torrent {
 
     let start = offset + begin;
     fs.readSync(file.fd, contents, 0, readLength, start);
-    if (length !== 0) {
-      if (global.config.debug) console.log("trancending boundary");
+    let track = 1;
+    while (length > 0) {
+      let fileSize = this.files[file.index + track].size;
+      if (global.config.debug)
+        console.log("trancending boundary", length, readLength, fileSize);
       fs.readSync(
-        this.files[file.index + 1].fd,
+        this.files[file.index + track].fd,
         contents,
         readLength,
-        length,
+        Math.min(length, fileSize),
         0
       );
+      length = length - Math.min(length, fileSize);
+      readLength += Math.min(length, fileSize);
     }
     if (global.config.debug) console.log("Contents", contents, contents.length);
     const payload = { index: index, begin: begin, block: contents };
     peer.socket.write(messages.piece(payload));
     //testing to be done !!
   };
+
   saveState = () => {
     const file = fs.openSync("./.state.json", "w+");
     const state = {

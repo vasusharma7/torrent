@@ -40,7 +40,7 @@ class Peer extends Torrent {
     //       this.servePiece(this, {
     //         index: [...this.downloaded][0],
     //         begin: 0,
-    //         length: 16384,
+    //         length: 8192,
     //       });
     //       // clearInterval(sendHavesI);
     //     }
@@ -330,22 +330,30 @@ class Peer extends Torrent {
     //do this by considering the next file length !! and file descriptor
     //next file length is important as the extra length in the data received of a peice may traverse/encompass various files
     //test file TempleOS.iso
+    let track = 1;
     if (multiple) {
-      fs.write(
-        this.files[file.index + 1].fd,
-        data2,
-        0,
-        length2,
-        0,
-        async (err, written, buffer) => {
-          if (err) {
-            if (global.config.debug) console.log(err);
-          } else {
-            // if(global.config.debug)console.log(written, buffer)
-            if (global.config.debug) console.log(data2, length2);
+      while (length2 > 0) {
+        let fileSize = this.files[file.index + track].size;
+        console.log("Writing file in series", track, length2, fileSize);
+        fs.write(
+          this.files[file.index + track].fd,
+          data2.slice(0, Math.min(data2.length, fileSize)),
+          0,
+          Math.min(fileSize, length2),
+          0,
+          async (err, written, buffer) => {
+            if (err) {
+              if (global.config.debug) console.log(err);
+            } else {
+              // if(global.config.debug)console.log(written, buffer)
+              // if (global.config.debug) console.log(data2, length2);
+            }
           }
-        }
-      );
+        );
+        length2 -= Math.min(fileSize, length2);
+        data2 = data2.slice(Math.min(data2.length, fileSize));
+        track++;
+      }
     }
   };
   handlePiece = (parsed) => {
@@ -473,6 +481,7 @@ class Peer extends Torrent {
       return;
     }
     let rem = this.pieceLen;
+    // this.current = 1445; //for debugging Clementine
     if (this.current === this.pieces.length - 1) {
       if (global.config.debug)
         console.log(
