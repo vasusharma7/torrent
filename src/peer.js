@@ -3,6 +3,7 @@ const messages = require("./messages");
 const fs = require("fs");
 const crypto = require("crypto");
 const { Torrent } = require("./torrent.js");
+const { set } = require("shelljs");
 
 class Peer extends Torrent {
   constructor(peer, torrent, pieces, pieceLen, socket = null) {
@@ -22,17 +23,27 @@ class Peer extends Torrent {
     this.client = !!socket;
 
     this.state = {
+      turtled: false,
       choked: true,
       interested: false,
       amChoking: true,
       isInterested: false,
     };
 
-    this.track = { start: 0, end: 0, speed: 0 };
+    this.track = { start: 0, end: 0, speed: 0, lastSpeed: 0 };
+    this.bill = { speed: 0, lastSpeed: 0 };
     if (this.downloaded.size != 0 && !Torrent.prototype.state.uploadStart) {
       Torrent.prototype.state.uploadStart = true;
       this.emitter.emit("upload");
     }
+    //check this out
+    this.speedTimer = setTimeout(() => {
+      if (this.track.lastSpeed == this.track.speed && this.speed != 0) {
+        Torrent.prototype.limitDSpeed = false;
+        this.track.speed = 0;
+        this.showSpeed();
+      }
+    }, 10000);
 
     // if (this.downloaded.size === 0) {
     //   let sendHavesI = setInterval(() => {
@@ -193,9 +204,15 @@ class Peer extends Torrent {
         break;
     }
   };
-  cacluateSpeed = () => {
-    this.track.speed =
-      this.downloadedBuffer.length / (this.track.end - this.track.start);
+  calcuateSpeed = () => {
+    this.track.lastSpeed =
+      this.track.speed == 0 ? this.track.lastSpeed : this.track.speed;
+    this.track.speed = Math.max(
+      0,
+      this.downloadedBuffer.length / (this.track.end - this.track.start)
+    );
+
+    this.showSpeed();
     // if(global.config.debug)console.log("speed", this.track.speed);
   };
   handleHandshake = (parsed) => {
@@ -281,18 +298,32 @@ class Peer extends Torrent {
     setTimeout(() => {
       this.socket.write(messages.unChoke());
       // this.checkKernelBuffer(is_kernel_buffer_full);
-      this.state.isChoked = false;
+      this.state.amChoking = false;
     }, 3000);
   };
-  handleRequest = (parsed) => {
+  handleRequest = async (parsed) => {
+    if (this.limitUSpeed) {
+      await new Promise((r) =>
+        setTimeout(r, Math.floor(Math.random() * 10000))
+      );
+    }
+    if (this.bill.start != 0) {
+      this.bill.start = this.bill.end;
+      this.bill.end = new Date().getTime();
+      this.bill.speed = this.pieceLen / (this.bill.end - this.bill.start);
+    }
+    if (this.bill.end == 0) {
+      this.start = new Date().getTime();
+    }
     if (global.config.debug)
       console.log(
         "xxxxxxxxxxxxxxxxxxxxxxxxx-----------------SOMEONE IS REQUESTING----------------xxxxxxxxxxxxxxxxxxxxxxxxxxxx",
         parsed.payload
       );
-    if (this.state.isChoked === true) this.servePiece(this, parsed.payload);
+    if (this.state.amChoking === true) this.servePiece(this, parsed.payload);
     else if (global.config.debug)
       console.log("A Choked Peer is requesting pieces");
+    this.manageUploadSpeed();
   };
   savePiece = (parsed) => {
     let file = this.getFD(parsed.payload.index);
@@ -358,7 +389,7 @@ class Peer extends Torrent {
   };
   handlePiece = (parsed) => {
     this.track.end = new Date().getTime();
-    this.cacluateSpeed();
+    this.calcuateSpeed();
     if (global.config.debug)
       console.log("GOT A PIECE !! ALERT !!", this.info.ip);
     const offset = parsed.payload.begin;
@@ -379,11 +410,12 @@ class Peer extends Torrent {
         )
       ) {
         this.downloaded.add(parsed.payload.index);
+        this.display();
         this.savePiece(parsed);
         this.myDownloads.add(parsed.payload.index);
-        if (!Torrent.prototype.uploadStart) {
+        if (!Torrent.prototype.state.uploadStart) {
           this.emitter.emit("upload");
-          Torrent.prototype.uploadStart = true;
+          Torrent.prototype.state.uploadStart = true;
         }
         this.saveState();
       } else {
@@ -397,7 +429,16 @@ class Peer extends Torrent {
     }
     this.download();
   };
-  download = () => {
+  download = async () => {
+    //remove this
+    if (this.limitDSpeed) {
+      await new Promise((r) =>
+        setTimeout(() => {
+          this.showSpeed();
+          r();
+        }, Math.floor(Math.random() * 10000))
+      );
+    }
     if (this.state.choked) {
       if (global.config.debug) console.log("Download, choked");
       return;
@@ -508,7 +549,7 @@ class Peer extends Torrent {
           length: length,
         })
       );
-      this.track.start = new Date().getTime();
+      if (this.done == 0) this.track.start = new Date().getTime();
       this.done += length;
       if (global.config.debug) console.log(this.current, this.done);
       if (global.config.debug) console.log("Queue - ", this.queue.size());

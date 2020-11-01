@@ -80,8 +80,29 @@ module.exports.init = (filename, dest) => {
       " Num Pieces - ",
       pieces.length
     );
+  // manipulateState(torrent);
+  Torrent.prototype.name = torrent.info.name.toString("utf8");
+  //perhaps number of files
   // if(global.config.debug)console.log(torrent.info.files[0].path.toString())
   return { torrent: torrent, pieces: pieces, pieceLen: peiceLen, files: files };
+};
+
+const manipulateState = (torrent) => {
+  const statePath = path.join(
+    path.dirname(require.main.filename),
+    `.${Torrent.prototype.name}.json`
+  );
+  const file = fs.openSync(statePath, "a+");
+
+  let stateInfo = {};
+  try {
+    stateInfo = JSON.parse(fs.readFileSync(statePath, "utf8"));
+  } catch (err) {
+    if (global.config.debug) console.log("A new torrent is added");
+  }
+  stateInfo[torrent.info.name.toString("utf8")] = { status: "downloading" };
+  fs.writeFileSync(statePath, JSON.stringify(stateInfo));
+  fs.closeSync(file);
 };
 
 module.exports.parse = async (torrent, callback) => {

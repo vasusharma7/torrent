@@ -119,6 +119,7 @@ const makeTorrent = async (walkPath, trackerURLS, type) => {
       "w+"
     );
     if (global.config.debug) console.log(torrent);
+    console.log("Torrent Successfuly Created");
     fs.writeFileSync(torrentFile, result);
   });
 };
@@ -131,6 +132,6 @@ let trackerURLS = [
   "http://bt2.careland.com.cn:6969/announce",
 ];
 
-makeTorrent(walkPath, trackerURLS, 0);
+// makeTorrent(walkPath, trackerURLS, 0);
 
 module.exports = { makeTorrent };

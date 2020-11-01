@@ -3,7 +3,11 @@ const messages = require("./messages.js");
 const fs = require("fs");
 const { EventEmitter: eventEmmiter } = require("./utils/events.js");
 const { PriorityQueue } = require("./utils/priority-queue");
-const { le } = require("bignum");
+const cliProgress = require("cli-progress");
+const _colors = require("colors");
+const ansiEscapes = require("ansi-escapes");
+const { prototype } = require("stream");
+const write = process.stdout.write.bind(process.stdout);
 //things to debug
 // queue size increasing
 // some discrepencies while new peers are added - bring in no piece situations
@@ -20,6 +24,78 @@ class Torrent {
       Torrent.prototype.state.uploadEvent = true;
     }
   }
+  display() {
+    // write(ansiEscapes.clearScreen + ansiEscapes.cursorTo(0, 1));
+    if (global.config.progress) {
+      write(ansiEscapes.cursorSavePosition + ansiEscapes.cursorTo(0, 10));
+      const size = (
+        this.files.map((file) => file.size).reduce((a, b) => a + b) / 1024
+      ).toFixed(2);
+      this.bar.update(
+        Math.min(
+          size,
+          ((this.downloaded.size * this.pieceLen) / 1024).toFixed(2)
+        )
+      );
+      let data = {
+        status: Torrent.prototype.isComplete ? "Seeding" : "downloading",
+        "Connected peers": this.connectedPeers.length,
+      };
+      console.table(data);
+      // write(ansiEscapes.cursorSavePosition + ansiEscapes.cursorTo(0, 40));
+      let info = {
+        Torrent: Torrent.prototype.name.substring(0, 10),
+        Size: `${size} KB | ${size / 1024} MB`,
+      };
+      console.table(info);
+
+      write(ansiEscapes.cursorRestorePosition);
+    }
+  }
+  manageUploadSpeed = () => {
+    let speed = 0;
+    let speedMap = [];
+    this.connectedPeers((peer) => {
+      if (!peer.state.amChoking) {
+        speed += peer.bill.speed;
+        speedMap.push({ peer: peer, speed: peer.bill.speed });
+      }
+    });
+    speedMap = speedMap.sorted((a, b) => b.speed - a.speed);
+    if (speed > this.uspeed) {
+      this.limitUSpeed = true;
+    }
+    if (global.config.progress) this.bar.update({ uSpeed: speed });
+  };
+  showSpeed = () => {
+    let speed = 0;
+    for (let peer of this.connectedPeers)
+      if (!peer.state.choked) speed += peer.track.speed;
+    if (speed > this.dspeed && this.dspeed != -1 && this.dspeed >= 10) {
+      // console.log("MAX SPEED REACHED", speed);
+      let speedMap = [];
+      this.connectedPeers.forEach((peer) => {
+        if (peer.track.speed != 0 && peer.state.choked == false)
+          speedMap.push({ peer: peer, speed: peer.track.speed });
+      });
+      speedMap = speedMap.sort((a, b) => b.speed - a.speed);
+      while (speed > this.dspeed) {
+        if (speedMap.length > 1) {
+          // console.log("Limiting Speed");
+          let ele = speedMap.pop();
+          speed -= ele.speed;
+          ele.peer.state.turtled = true;
+          ele.peer.state.choked = true;
+        } else {
+          Torrent.prototype.limitDSpeed = true;
+          break;
+        }
+      }
+    } else {
+      Torrent.prototype.limitDSpeed = false;
+    }
+    if (global.config.progress) this.bar.update({ speed: speed });
+  };
   showProgress = () => {
     const progress = [
       {
@@ -47,13 +123,24 @@ class Torrent {
     if (this.connectedPeers.length <= 4) {
       if (global.config.debug)
         console.log("less than 5 peers", this.connectedPeers.length);
+      let speed = 0;
       this.connectedPeers.forEach((peer) => {
-        if (peer.amChoking) {
+        speed += peer.track.speed;
+        if (peer.state.amChoking) {
           if (global.config.debug) console.log("I am unchoking a peer");
-          peer.amChoking = false;
+          peer.state.amChoking = false;
           peer.socket.write(messages.unChoke());
         }
       });
+      if (speed < 10) {
+        Torrent.prototype.limitDSpeed = false;
+        this.connectedPeers.forEach((peer) => {
+          if (peer.state.turtled == true) {
+            peer.state.choked = false;
+            peer.state.turtled = false;
+          }
+        });
+      }
       return;
     }
     let speedMap = [];
@@ -61,12 +148,19 @@ class Torrent {
     this.connectedPeers.forEach((peer) => {
       totalSpeed += peer.track.speed;
       speedMap.push({ peer: peer, speed: peer.track.speed });
-      // if (global.config.debug)
-      //   console.log("speed", peer.info.ip, peer.track.speed);
     });
     if (totalSpeed == 0) {
       if (global.config.debug) console.log("All Peers have Speed 0");
       return;
+    }
+    if (totalSpeed < 10) {
+      Torrent.prototype.limitDSpeed = false;
+      this.connectedPeers.forEach((peer) => {
+        if (peer.state.turtled == true) {
+          peer.state.choked = false;
+          peer.state.turtled = false;
+        }
+      });
     }
     speedMap = speedMap.sort((a, b) => b.speed - a.speed);
     if (global.config.debug) console.log("SPEED MAP");
@@ -81,20 +175,26 @@ class Torrent {
 
     for (let peer of turtles.map((obj) => obj.peer)) {
       // if (global.config.debug) console.log("slow", peer.info.ip);
-      peer.amChoking = true;
-      peer.socket.write(messages.choke());
+      if (!peer.state.amChoking) {
+        peer.state.amChoking = true;
+        peer.socket.write(messages.choke());
+      }
     }
     for (let peer of speedMap.map((obj) => obj.peer)) {
       // if (global.config.debug) console.log("fast", peer.info.ip);
-      if (peer.amChoking) {
+      if (peer.state.amChoking) {
         if (global.config.debug) console.log("I am unchoking a peer");
-        peer.amChoking = false;
+        peer.state.amChoking = false;
         peer.socket.write(messages.unChoke());
       }
     }
   };
 
   optimisticUnchoke = () => {
+    //add a try catch here
+    // let abc = new Date();
+    // console.log(abc.getMinutes(), abc.getSeconds());
+
     if (global.config.debug) console.log("optimistically unchoking");
     const numConnected = this.connectedPeers.length;
     if (numConnected <= 4) return;
@@ -107,16 +207,32 @@ class Torrent {
 
     const unChokeIndex = Math.floor(Math.random() * 100) % numUnchoked;
     const chokeIndex = Math.floor(Math.random() * 100) % numChoked;
-    if (global.config.debug)
-      console.table({
-        unChoked: unChokedPeers[unChokeIndex].info.ip,
-        choked: chokedPeers[chokeIndex].info.ip,
-      });
 
-    unChokedPeers[unChokeIndex].socket.write(messages.unChoke());
-    unChokedPeers[unChokeIndex].state.amChoking = false;
-    chokedPeers[chokeIndex].socket.write(messages.choke());
-    unChokedPeers[unChokeIndex].state.amChoking = true;
+    let targetChoked = chokedPeers[chokeIndex].length
+      ? chokedPeers[chokeIndex][0]
+      : chokedPeers[chokeIndex];
+    let targetUnChoked = unChokedPeers[unChokeIndex].length
+      ? unChokedPeers[unChokeIndex][0]
+      : unChokedPeers[unChokeIndex];
+
+    if (global.config.debug) {
+      console.log("wierd ", targetChoked);
+      console.log("wierd _ ", targetChoked.info);
+      console.log("wierd ", targetUnChoked);
+      console.log("wierd _ ", targetUnChoked.info);
+      console.table({
+        unChoked: targetUnChoked.info["ip"],
+        choked: targetChoked.info["ip"],
+      });
+    }
+
+    targetUnChoked.socket.write(messages.unChoke());
+
+    targetUnChoked.state.amChoking = false;
+
+    targetChoked.socket.write(messages.choke());
+
+    targetChoked.state.amChoking = true;
 
     unChokedPeers.push(chokedPeers.splice(chokeIndex, 1));
     chokedPeers.push(unChokedPeers.splice(unChokeIndex, 1));
@@ -133,9 +249,10 @@ class Torrent {
     this.connectedPeers.forEach((peer) => {
       if (global.config.debug) console.log(peer.info.ip);
     });
-    Torrent.prototype.top4I = setInterval(this.topFour, 10000);
-    Torrent.prototype.optChI = setInterval(this.optimisticUnchoke, 30000);
+    Torrent.prototype.top4I = setInterval(this.topFour, 100);
+    Torrent.prototype.optChI = setInterval(this.optimisticUnchoke, 300);
   };
+
   closeConnections = () => {
     this.connectedPeers.forEach((peer) => {
       // peer.socket.end();
@@ -145,6 +262,7 @@ class Torrent {
     // startSeed();
     if (global.config.debug) console.log("I am a seeder now :)");
   };
+
   buildQueue = () => {
     const prev = this.queue.size();
     if (!this.queue.isEmpty()) {
@@ -162,6 +280,7 @@ class Torrent {
     let downloaded = [];
     let noPiece = [];
     let NAN = [];
+
     this.pieceTracker.forEach((info, key) => {
       if (isNaN(info)) NAN.push(key);
       else if (this.downloaded.has(key)) downloaded.push(key);
@@ -320,11 +439,11 @@ class Torrent {
     if (global.config.debug) console.log("Contents", contents, contents.length);
     const payload = { index: index, begin: begin, block: contents };
     peer.socket.write(messages.piece(payload));
-    //testing to be done !!
+    //testing almost done
   };
 
   saveState = () => {
-    const file = fs.openSync("./.state.json", "w+");
+    const file = fs.openSync(`./.state.json`, "w+");
     const state = {
       downloaded: Array.from(Torrent.prototype.downloaded),
       isComplete: Torrent.prototype.isComplete,
@@ -333,7 +452,9 @@ class Torrent {
     fs.writeSync(file, JSON.stringify(state));
   };
 }
-const initTorrent = (files, pieces) => {
+const initTorrent = (files, pieces, uspeed, dspeed) => {
+  Torrent.prototype.uspeed = uspeed;
+  Torrent.prototype.dspeed = dspeed;
   Torrent.prototype.pieceTracker = new Array(pieces.length).fill(0);
   Torrent.prototype.queue = new PriorityQueue();
   Torrent.prototype.downloaded = new Set();
@@ -349,5 +470,31 @@ const initTorrent = (files, pieces) => {
   Torrent.prototype.unChokedPeers = new Set();
   Torrent.prototype.state = { uploadEvent: false, uploadStart: false };
   Torrent.prototype.isComplete = false;
+  if (global.config.progress) {
+    let bar = new cliProgress.Bar(
+      {
+        barsize: 65,
+      },
+      {
+        format:
+          "Progress " +
+          _colors.cyan(" {bar}") +
+          " {percentage}% | ETA: {eta}s | {value}/{total} | Speed: {speed} kB/s | U.Speed: {uSpeed} kB/s",
+        barCompleteChar: "\u2588",
+        barIncompleteChar: "\u2591",
+      }
+    );
+    bar.start(
+      (files.map((file) => file.size).reduce((a, b) => a + b) / 1024).toFixed(
+        2
+      ),
+      0,
+      {
+        speed: "0",
+        uSpeed: "0",
+      }
+    );
+    Torrent.prototype.bar = bar;
+  }
 };
 module.exports = { Torrent, initTorrent };

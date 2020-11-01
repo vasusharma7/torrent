@@ -4,11 +4,17 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
+    "argparse": "^2.0.1",
     "axios": "^0.20.0",
     "bencode": "^2.0.1",
     "bignum": "^0.13.1",
+    "chalk": "^4.1.0",
+    "clear": "^0.1.0",
+    "cli-progress": "^3.8.2",
+    "clui": "^0.3.6",
     "death": "^1.1.0",
-    "priorityqueue": "^1.0.0",
+    "figlet": "^1.5.0",
+    "inquirer": "^7.3.3",
     "random-bytes-seed": "^1.0.3",
     "shelljs": "^0.8.4"
   },

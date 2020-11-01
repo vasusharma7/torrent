@@ -1,98 +1,149 @@
-require("./src/config");
+const chalk = require("chalk");
+const clear = require("clear");
+const figlet = require("figlet");
+const inquirer = require("inquirer");
+const startTorrent = require("./src/main.js");
+const { makeTorrent } = require("./src/make-torrent");
+const { ArgumentParser } = require("argparse");
+const { version } = require("./package.json");
 const process = require("process");
-const torrentFile = require("./src/parse-torrent-file");
-const Seeder = require("./src/seed");
-const { Peer } = require("./src/peer");
-const { Torrent, initTorrent } = require("./src/torrent");
-const file = process.argv[2];
-const dest = process.argv[3];
-// const torrentUtils = require("./src/torrent-file-utils");
-// const axios = require("axios");
+const { off } = require("process");
+const parser = new ArgumentParser({
+  description: "VS Torrent",
+});
+parser.add_argument("-v", "--version", { action: "version", version });
+parser.add_argument("-d", "--download", {
+  help: "Path to Torrent file to download",
+});
 
-module.exports = startTorrent = (file, dest) => {
-  if (!file) {
-    if (global.config.debug)
-      console.log("Please provide a torrent file in the arguement");
-    process.exit();
-  }
-  if (!dest) {
-    dest = ".";
-  }
-  const { torrent, pieces, pieceLen, files } = torrentFile.init(file, dest);
-  let seeder = new Seeder(
-    global.config.hostname,
-    global.config.port,
-    global.config.maxConnections,
-    torrent,
-    pieces,
-    pieceLen
-  );
-  seeder.execute();
-  initTorrent(files, pieces);
+parser.add_argument("-m", "--make", {
+  help: "Path to File or Folde to make Torrent",
+});
+parser.add_argument("-t", "--type", {
+  help: "Type of Torrent To Make - Single File (0) | Folder (1)",
+});
+parser.add_argument("-l", "--location", {
+  help: "Path of Location to donwload Torrent or save newly created file",
+});
 
-  torrentFile.parse(torrent, (peers) => parseCallback(peers));
-  const parseCallback = (peers) => {
-    const allPeers = [];
-    if (Torrent.prototype.connectedPeers.length > 10) {
-      if (global.config.debug) console.log("Enough Peers");
-    }
-    if (Torrent.prototype.isComplete) {
-      if (global.config.debug) console.log("Download is complete");
-      return;
-    }
-    if (global.config.debug) console.log("got the peers", peers);
-    peers.forEach((peer) => {
-      let connected = false;
-      Torrent.prototype.connectedPeers.forEach((cp) => {
-        if (connected) return;
-        if (cp.info.ip === peer.ip) {
-          connected = true;
+parser.add_argument("-u", "--upload-speed", {
+  help: "Maximum Uplaod Speed",
+});
+
+parser.add_argument("-s", "--download-speed", {
+  help: "Maximum Download Speed",
+});
+
+const askTorrentQuestions = () => {
+  const questions = [
+    {
+      name: "torrent_file",
+      type: "input",
+      message: "Enter the path of torrent file:",
+      validate: function (value) {
+        if (value.endsWith(".torrent")) {
+          return true;
+        } else {
+          return "Please enter the path of file with torrent extension";
         }
-      });
-      if (connected) return;
-      allPeers.push(new Peer(peer, torrent, pieces, pieceLen));
-    });
-    allPeers.forEach((peer) => {
-      peer.execute();
-    });
-    if (global.config.debug)
-      console.log(Torrent.prototype.connectedPeers.length, allPeers.length);
-  };
+      },
+    },
+    {
+      name: "destination",
+      type: "file",
+      basePath: "/",
+      message: "Enter the path where you want to save the downloaded files:",
+      validate: function (value) {
+        if (value.length) {
+          return true;
+        } else {
+          return "Please enter correct Path.";
+        }
+      },
+    },
+  ];
+  return inquirer.prompt(questions);
 };
 
-if (require.main === module) {
-  startTorrent(file, dest);
-}
+const askMakeTorrent = () => {
+  const questions = [
+    {
+      type: "checkbox",
+      name: "type",
+      message: "Select the type of torrent you want to create",
+      choices: ["file", "folder"],
+    },
+    {
+      type: "input",
+      name: "location",
+      message: "Enter the path of file/folder",
+      validate: function (value) {
+        if (value.length) {
+          return true;
+        } else {
+          return "Please enter correct Path.";
+        }
+      },
+    },
+    {
+      type: "input",
+      name: "destination",
+      message: "Enter the destination of torrent file",
+      validate: function (value) {
+        if (value.length) {
+          return true;
+        } else {
+          return "Please enter correct Path.";
+        }
+      },
+    },
+  ];
+  return inquirer.prompt(questions);
+};
+const mainChoices = () => {
+  const questions = [
+    {
+      type: "checkbox",
+      name: "type",
+      message: "Select the operaton",
+      choices: ["Create Torrent", "Start Torrent"],
+    },
+  ];
+  return inquirer.prompt(questions);
+};
 
-//---------------------------------------------------HTTP TRACKER-------------------------------------
+const run = async () => {
+  clear();
 
-// if(global.config.debug)console.log(torrent.announce.toString("utf8"));
-// if(global.config.debug)console.log(torrent.info.toString("utf8"));
-// if(global.config.debug)console.log(torrentUtils.left(torrent));
-// const infoHash = encodeURI(torrentUtils.getInfoHash(torrent));
-// const myId = encodeURI(torrentUtils.myPeerId());
-// const size = torrent.info.files
-//   ? torrent.info.files.map((file) => file.length).reduce((a, b) => a + b)
-//   : torrent.info.length;
-// var myurl = `${torrent.announce.toString(
-//   "utf8"
-// )}?info_hash=${infoHash}&?peer_id=${myId}&port=6887&downloaded=0&left=${size}`;
-// if(global.config.debug)console.log(myurl);
-// axios
-//   .get(myurl)
-//   .then((res) => if(global.config.debug)console.log(res.data))
-//   .catch((err) => if(global.config.debug)console.log(err));
+  console.log(
+    chalk.green(figlet.textSync("VS Torrent", { horizontalLayout: "full" }))
+  );
+  if (process.argv.length == 2) {
+    let info = await mainChoices();
+    if (info.type == "Create Torrent") {
+      info = await askMakeTorrent();
+      let trackerURLS = [
+        "udp://public.popcorn-tracker.org:6969/announce",
+        "udp://public.popcorn-tracker.org:6969/announce",
+        "http://bt2.careland.com.cn:6969/announce",
+      ];
+      makeTorrent(info.location, trackerURLS, info.type == "folder");
+    } else {
+      info = await askTorrentQuestions();
+      startTorrent(info.torrent_file, info.destination);
+    }
+  } else {
+    const args = parser.parse_args();
+    console.log(args);
+    if (args.download) {
+      startTorrent(
+        args.download,
+        args.location,
+        parseInt(args.upload_speed),
+        parseInt(args.download_speed)
+      );
+    }
+  }
+};
 
-//--------------------------------------------------------------------------------------------------------
-// Peer.prototype.pieces = pieces;
-// Peer.prototype.pieceLen = pieceLen;
-// Peer.prototype.pieceTracker = new Array(pieces.length).fill(0);
-// Peer.prototype.downloaded = new Array(pieces.length).fill(0);
-// Peer.prototype.file = fs.openSync(process.cwd() + "/" + torrent.info.name, "w");
-
-// connection.Peer.prototype.downloaded = 0
-
-// const axios = require("axios")
-// let piecesCount = new Array(pieces.length).fill(0);
-
-//----------------------------------------------------------------------------------------------------------
+run();
