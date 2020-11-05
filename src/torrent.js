@@ -37,6 +37,14 @@ class Torrent {
           ((this.downloaded.size * this.pieceLen) / 1024).toFixed(2)
         )
       );
+      if (global.config.electron) {
+        Torrent.prototype.transport(
+          "progress",
+          Math.min(size, (this.downloaded.size * this.pieceLen) / 1024).toFixed(
+            2
+          )
+        );
+      }
       let data = {
         status: Torrent.prototype.isComplete ? "Seeding" : "downloading",
         "Connected peers": this.connectedPeers.length,
@@ -55,16 +63,17 @@ class Torrent {
   manageUploadSpeed = () => {
     let speed = 0;
     let speedMap = [];
-    this.connectedPeers((peer) => {
+    this.connectedPeers.forEach((peer) => {
       if (!peer.state.amChoking) {
         speed += peer.bill.speed;
         speedMap.push({ peer: peer, speed: peer.bill.speed });
       }
     });
-    speedMap = speedMap.sorted((a, b) => b.speed - a.speed);
+    speedMap = speedMap.sort((a, b) => b.speed - a.speed);
     if (speed > this.uspeed) {
       this.limitUSpeed = true;
     }
+    if (global.config.electron) Torrent.prototype.transport("u-speed", speed);
     if (global.config.progress) this.bar.update({ uSpeed: speed });
   };
   showSpeed = () => {
@@ -94,6 +103,7 @@ class Torrent {
     } else {
       Torrent.prototype.limitDSpeed = false;
     }
+    if (global.config.electron) Torrent.prototype.transport("d-speed", speed);
     if (global.config.progress) this.bar.update({ speed: speed });
   };
   showProgress = () => {
@@ -208,37 +218,59 @@ class Torrent {
     const unChokeIndex = Math.floor(Math.random() * 100) % numUnchoked;
     const chokeIndex = Math.floor(Math.random() * 100) % numChoked;
 
-    let targetChoked = chokedPeers[chokeIndex].length
+    let targetChoked = Array.isArray(chokedPeers[chokeIndex])
       ? chokedPeers[chokeIndex][0]
       : chokedPeers[chokeIndex];
-    let targetUnChoked = unChokedPeers[unChokeIndex].length
+    let targetUnChoked = Array.isArray(unChokedPeers[unChokeIndex])
       ? unChokedPeers[unChokeIndex][0]
       : unChokedPeers[unChokeIndex];
 
     if (global.config.debug) {
-      console.log("wierd ", targetChoked);
+      console.log("wierd ", Array.isArray(chokedPeers[chokeIndex]));
       console.log("wierd _ ", targetChoked.info);
-      console.log("wierd ", targetUnChoked);
+      console.log("wierd ", Array.isArray(unChokedPeers[unChokeIndex]));
       console.log("wierd _ ", targetUnChoked.info);
       console.table({
         unChoked: targetUnChoked.info["ip"],
         choked: targetChoked.info["ip"],
       });
     }
+    if (!targetUnChoked) {
+      if (!global.config.debug) console.log("this is blunder 0");
+      let index = Torrent.prototype.connectedPeers.indexOf(targetUnChoked);
+      if (index != -1) Torrent.prototype.connectedPeers.splice(index, 1);
 
-    targetUnChoked.socket.write(messages.unChoke());
+      return;
+    }
+    if (!targetChoked) {
+      if (!global.config.debug) console.log("this is blunder 1");
+      let index = Torrent.prototype.connectedPeers.indexOf(targetChoked);
+      if (index != -1) Torrent.prototype.connectedPeers.splice(index, 1);
+      return;
+    }
+    try {
+      targetUnChoked.socket.write(messages.unChoke());
 
-    targetUnChoked.state.amChoking = false;
+      targetUnChoked.state.amChoking = false;
 
-    targetChoked.socket.write(messages.choke());
+      targetChoked.socket.write(messages.choke());
 
-    targetChoked.state.amChoking = true;
+      targetChoked.state.amChoking = true;
 
-    unChokedPeers.push(chokedPeers.splice(chokeIndex, 1));
-    chokedPeers.push(unChokedPeers.splice(unChokeIndex, 1));
+      unChokedPeers.push(chokedPeers.splice(chokeIndex, 1));
+      chokedPeers.push(unChokedPeers.splice(unChokeIndex, 1));
 
-    Torrent.prototype.chokedPeers = new Set(chokedPeers);
-    Torrent.prototype.unChokedPeers = new Set(unChokedPeers);
+      Torrent.prototype.chokedPeers = new Set(chokedPeers);
+      Torrent.prototype.unChokedPeers = new Set(unChokedPeers);
+    } catch {
+      if (1 || global.config.debug) {
+        console.log("wierd ", Array.isArray(chokedPeers[chokeIndex]));
+        console.log("wierd _ ", targetChoked.info);
+        console.log("wierd ", Array.isArray(unChokedPeers[unChokeIndex]));
+        console.log("wierd _ ", targetUnChoked.info);
+        console.log("this is another blunder");
+      }
+    }
   };
 
   startUpload = () => {
@@ -254,11 +286,23 @@ class Torrent {
   };
 
   closeConnections = () => {
-    this.connectedPeers.forEach((peer) => {
-      // peer.socket.end();
+    if (Torrent.prototype.isComplete == true) return;
+    const peers = this.connectedPeers;
+    peers.forEach((peer) => {
+      if (!peer.client) {
+        peer.socket.end();
+        let index = Torrent.prototype.connectedPeers.indexOf(peer);
+        if (index !== -1) {
+          Torrent.prototype.connectedPeers.splice(index, 1);
+          Torrent.prototype.chokedPeers.delete(this);
+          Torrent.prototype.unChokedPeers.delete(this);
+        }
+      }
       //allow peers to be connected without requesting pieces from them
     });
     Torrent.prototype.isComplete = true;
+    clearInterval(Torrent.prototype.top4I);
+    clearInterval(Torrent.prototype.optChI);
     // startSeed();
     if (global.config.debug) console.log("I am a seeder now :)");
   };
@@ -401,7 +445,8 @@ class Torrent {
       console.log("Have sent to interested", peer.info.ip, "of - ", sent);
   };
   servePiece = (peer, { index, begin, length }) => {
-    if (length + begin > 16384) {
+    let size = this.pieceLen;
+    if (length > 16384) {
       if (global.config.debug) console.log("rejected");
       return;
     } //requesting more than 16KB, so rejected
@@ -413,31 +458,38 @@ class Torrent {
     let file = this.getFD(index);
     let offset = this.getFileOffset(index);
 
-    let contents = Buffer.alloc(length);
+    let contents = Buffer.alloc(this.pieceLen);
 
-    let readLength = Math.min(length, file.size - offset - begin);
+    let readLength = Math.min(size, file.size - offset);
 
-    length = length - readLength;
+    size = size - readLength;
 
-    let start = offset + begin;
+    let start = offset;
+    //check for errors in here - in console
     fs.readSync(file.fd, contents, 0, readLength, start);
     let track = 1;
-    while (length > 0) {
+    while (size > 0) {
+      //debug this - check size  0
       let fileSize = this.files[file.index + track].size;
       if (global.config.debug)
-        console.log("trancending boundary", length, readLength, fileSize);
+        console.log("trancending boundary", size, readLength, fileSize);
       fs.readSync(
         this.files[file.index + track].fd,
         contents,
         readLength,
-        Math.min(length, fileSize),
+        Math.min(size, fileSize),
         0
       );
-      length = length - Math.min(length, fileSize);
-      readLength += Math.min(length, fileSize);
+      size = size - Math.min(size, fileSize);
+      readLength += Math.min(size, fileSize);
+      track++;
     }
-    if (global.config.debug) console.log("Contents", contents, contents.length);
-    const payload = { index: index, begin: begin, block: contents };
+    if (global.config.debug) console.log("Contents", contents, contents.size);
+    const payload = {
+      index: index,
+      begin: begin,
+      block: contents.slice(begin, begin + length),
+    };
     peer.socket.write(messages.piece(payload));
     //testing almost done
   };

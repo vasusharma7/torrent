@@ -30,9 +30,9 @@ class Seeder {
       if (global.config.debug) console.log("Server is not listening");
     }
 
-    setTimeout(function () {
-      this.server.close();
-    }, 5000000);
+    // setTimeout(function () {
+    //   this.server.close();
+    // }, 5000000);
   }
   execute() {
     //static port allocation

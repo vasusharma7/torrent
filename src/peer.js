@@ -96,6 +96,9 @@ class Peer extends Torrent {
           return;
         }
         Torrent.prototype.connectedPeers.splice(index, 1);
+        Torrent.prototype.chokedPeers.delete(this);
+        Torrent.prototype.unChokedPeers.delete(this);
+
         if (global.config.debug) console.table(err);
         if (global.config.debug)
           console.table({
@@ -120,7 +123,7 @@ class Peer extends Torrent {
         if (global.config.debug) console.log("Socket closed!");
         if (error) {
           if (global.config.debug)
-            console.log("Socket was closed coz of transmission error");
+            console.log("Socket was closed coz of transmission error", error);
         }
       }.bind(this)
     );
@@ -142,6 +145,15 @@ class Peer extends Torrent {
           this.buffer = this.buffer.slice(this.msgLen(this.buffer));
           if (!this.handshake) {
             Torrent.prototype.connectedPeers.push(this);
+            if (global.config.electron) {
+              let data = [];
+              this.connectedPeers.forEach((peer) =>
+                data.push({
+                  info: peer.info,
+                })
+              );
+              Torrent.prototype.transport("t-peers", data);
+            }
             this.handshake = true;
           }
         }
@@ -220,7 +232,9 @@ class Peer extends Torrent {
     // this.socket.write(messages.unChoke());
     if (parsed) {
       if (this.client) {
-        let is_kernel_buffer_full = this.socket.write(messages.handshake());
+        let is_kernel_buffer_full = this.socket.write(
+          messages.handshake(this.torrent)
+        );
         // checkKernelBuffer(is_kernel_buffer_full);
       }
       if (!Torrent.prototype.isComplete) {
@@ -255,6 +269,15 @@ class Peer extends Torrent {
   };
 
   handleUnChoke = (parsed) => {
+    Torrent.prototype.unchokedMeList.push(this);
+    if (global.config.electron) {
+      Torrent.prototype.transport(
+        "t-unchoked",
+        this.unchokedMeList.map((peer) => {
+          info: peer.info;
+        })
+      );
+    }
     this.state.choked = false;
     if (global.config.debug) console.log("You are unchoked");
     this.buildQueue();
@@ -280,26 +303,21 @@ class Peer extends Torrent {
         "xxxxxxxxxxxxxxxxxxxxxxxxx-----------------SOMEONE IS INTERESTED----------------xxxxxxxxxxxxxxxxxxxxxxxxxxxx",
         parsed
       );
-    // this.socket.write(messages.unChoke());
     if (this.state.amChoking === false) {
+      this.socket.write(messages.unChoke());
+      this.state.amChoking = false;
     }
 
     //send bitfield to the peer and wait for the request
-    if (this.downloaded.size === 0) {
-      let sendHavesI = setInterval(() => {
-        if (this.downloaded.size !== 0) {
-          this.sendHaves(this);
-          setTimeout(() => clearInterval(sendHavesI), 5000);
-        }
-      }, 1000);
-    } else {
+    let sendHavesI = setInterval(() => {
+      if (this.downloaded.size !== 0) {
+        this.sendHaves(this);
+        // setTimeout(() => clearInterval(sendHavesI), 5000);
+      }
+    }, 10000);
+    if (this.downloaded.size !== 0) {
       this.sendHaves(this);
     }
-    setTimeout(() => {
-      this.socket.write(messages.unChoke());
-      // this.checkKernelBuffer(is_kernel_buffer_full);
-      this.state.amChoking = false;
-    }, 3000);
   };
   handleRequest = async (parsed) => {
     if (this.limitUSpeed) {
@@ -320,7 +338,7 @@ class Peer extends Torrent {
         "xxxxxxxxxxxxxxxxxxxxxxxxx-----------------SOMEONE IS REQUESTING----------------xxxxxxxxxxxxxxxxxxxxxxxxxxxx",
         parsed.payload
       );
-    if (this.state.amChoking === true) this.servePiece(this, parsed.payload);
+    if (this.state.amChoking === false) this.servePiece(this, parsed.payload);
     else if (global.config.debug)
       console.log("A Choked Peer is requesting pieces");
     this.manageUploadSpeed();
@@ -365,7 +383,8 @@ class Peer extends Torrent {
     if (multiple) {
       while (length2 > 0) {
         let fileSize = this.files[file.index + track].size;
-        console.log("Writing file in series", track, length2, fileSize);
+        if (global.config.debug)
+          console.log("Writing file in series", track, length2, fileSize);
         fs.write(
           this.files[file.index + track].fd,
           data2.slice(0, Math.min(data2.length, fileSize)),
@@ -453,8 +472,9 @@ class Peer extends Torrent {
         { size: this.pieces.length },
       ]);
     if (
-      this.queue.size() === 0 &&
-      this.downloaded.size === this.pieces.length
+      (this.queue.size() === 0 &&
+        this.downloaded.size === this.pieces.length) ||
+      Torrent.prototype.isComplete
     ) {
       if (global.config.debug) console.log("Download Complete !!");
 
@@ -462,13 +482,7 @@ class Peer extends Torrent {
       // clearInterval(Torrent.prototype.optChI);
       this.closeConnections();
       return;
-    } else if (this.downloaded.size == 112) {
-      // for (let i = 0; i < this.pieces.length; i++) {
-      //   if(global.config.debug)console.log("has", i + 1, this.downloaded.has(i));
-      // }
-      if (global.config.debug) console.log("1 piece still left to download");
     }
-
     if (this.current === -1) {
       const store = [];
       let found = 0;
@@ -477,13 +491,14 @@ class Peer extends Torrent {
       if (global.config.debug) console.log(this.info.ip, this.state.choked);
       if (!this.queue.size()) {
         if (global.config.debug) console.log("No pieces left to download");
+        this.buildQueue();
         if (global.config.debug)
           console.log(
             this.downloaded.size === this.pieces.length,
             this.downloaded.size,
             this.pieces.length
           );
-        //to be tested
+        //to be tested - endgame protocol
         for (let i = 0; i < this.pieces.length; i++) {
           if (this.downloaded.has(i) == false) {
             this.queue.push({ index: i, count: 1 });
@@ -541,7 +556,7 @@ class Peer extends Torrent {
       if (global.config.debug) console.log("LEFT IS - ", rem - this.done);
     }
 
-    if (this.done < rem) {
+    while (this.done < rem) {
       this.socket.write(
         messages.request({
           index: this.current,
@@ -553,6 +568,7 @@ class Peer extends Torrent {
       this.done += length;
       if (global.config.debug) console.log(this.current, this.done);
       if (global.config.debug) console.log("Queue - ", this.queue.size());
+      length = Math.min(16384, rem, rem - this.done);
     }
   };
 }

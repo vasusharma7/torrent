@@ -1,3 +1,5 @@
+const electron = require("electron");
+const { ipcRenderer: ipc } = electron;
 const fs = require("fs");
 const tracker = require("./tracker");
 const bencode = require("bencode");
@@ -5,6 +7,8 @@ const process = require("process");
 const path = require("path");
 var shell = require("shelljs");
 const { Torrent } = require("./torrent");
+const main = require("./main");
+
 module.exports.init = (filename, dest) => {
   let file = -1;
   try {
@@ -14,6 +18,7 @@ module.exports.init = (filename, dest) => {
       console.log("An error occured while opening torrent file", err.message);
     process.exit();
   }
+  let size = 0;
   const torrent = bencode.decode(file);
   if (global.config.debug) console.log(torrent);
   if (global.config.debug)
@@ -21,7 +26,6 @@ module.exports.init = (filename, dest) => {
   let files = [];
   // if(global.config.debug)console.log(torrent.info.files);
   // process.exit();
-
   if (torrent.info.files) {
     const savePath = path.join(dest, torrent.info.name.toString("utf8"));
     //if(global.config.debug)console.log("path", path);
@@ -56,12 +60,14 @@ module.exports.init = (filename, dest) => {
         shell.mkdir("-p", rootPath);
         let fd = fs.openSync(filePath, "w+");
         files.push({ path: filePath, size: file.length, fd: fd });
+        size += file.length;
       }
     }
   } else {
     let savePath = path.join(dest, torrent.info.name.toString("utf8"));
     let fd = fs.openSync(savePath, "w+");
     files.push({ path: path, size: torrent.info.length, fd: fd });
+    size += torrent.info.length;
   }
   // if(global.config.debug)console.log(files);
   // const peiceLen = torrent.info.length
@@ -84,6 +90,24 @@ module.exports.init = (filename, dest) => {
   Torrent.prototype.name = torrent.info.name.toString("utf8");
   //perhaps number of files
   // if(global.config.debug)console.log(torrent.info.files[0].path.toString())
+  if (global.config.electron) {
+    let info = {
+      "t-name": Torrent.prototype.name,
+      "t-by": torrent["created by"]
+        ? torrent["created by"].toString("utf8")
+        : "",
+      "t-on": new Date(torrent["creation date"]),
+      "t-size": size,
+      "t-pieceLen": peiceLen,
+      "t-pieces": pieces.length,
+    };
+    Torrent.prototype.transport("torrent-info", info);
+    Torrent.prototype.transport("t-files", {
+      path: path.join(dest, torrent.info.name.toString("utf8")),
+      type: files.length - 1,
+    });
+    // process.exit();
+  }
   return { torrent: torrent, pieces: pieces, pieceLen: peiceLen, files: files };
 };
 
@@ -112,6 +136,9 @@ module.exports.parse = async (torrent, callback) => {
     torrent["announce-list"].forEach((url) => {
       urls.push(...url.toString().split(","));
     });
+  }
+  if (global.config.electron) {
+    Torrent.prototype.transport("t-trackers", urls);
   }
 
   let track = 1;

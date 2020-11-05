@@ -1,6 +1,7 @@
 const crypto = require("crypto");
 const bencode = require("bencode");
 var seed = require("random-bytes-seed");
+const { Torrent } = require("./torrent");
 // const toBufferBE = require("bigint-buffer").toBufferBE;
 crypto.randomBytes = seed("random-constant");
 
@@ -24,10 +25,14 @@ module.exports.myPeerId = () => {
 
 module.exports.left = (torrent) => {
   //   const block = Buffer.alloc(8);
-  const size = torrent.info.files
+  let size = torrent.info.files
     ? torrent.info.files.map((file) => file.length).reduce((a, b) => a + b)
     : torrent.info.length;
-
+  size = Math.max(
+    0,
+    size - Torrent.prototype.downloaded.size * torrent.info["piece length"]
+  );
+  if (global.config.debug) console.log("left size", size);
   var buf = new Buffer.alloc(8);
   buf.fill(0);
 

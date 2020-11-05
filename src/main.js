@@ -4,13 +4,19 @@ const torrentFile = require("./parse-torrent-file");
 const Seeder = require("./seed");
 const { Peer } = require("./peer");
 const { Torrent, initTorrent } = require("./torrent");
-const file = process.argv[2];
-const dest = process.argv[3];
+// const file = process.argv[2];
+// const dest = process.argv[3];
 
 // const torrentUtils = require("./src/torrent-file-utils");
 // const axios = require("axios");
 
-module.exports = startTorrent = (file, dest, uspeed = -1, dspeed = -1) => {
+module.exports.startTorrent = (
+  file,
+  dest,
+  uspeed = -1,
+  dspeed = -1,
+  transport = null
+) => {
   if (!file) {
     if (global.config.debug)
       console.log("Please provide a torrent file in the arguement");
@@ -19,6 +25,7 @@ module.exports = startTorrent = (file, dest, uspeed = -1, dspeed = -1) => {
   if (!dest) {
     dest = ".";
   }
+  Torrent.prototype.transport = transport;
   const { torrent, pieces, pieceLen, files } = torrentFile.init(file, dest);
   let seeder = new Seeder(
     global.config.hostname,
@@ -59,8 +66,8 @@ module.exports = startTorrent = (file, dest, uspeed = -1, dspeed = -1) => {
     if (global.config.debug)
       console.log(Torrent.prototype.connectedPeers.length, allPeers.length);
   };
+  // parseCallback([{ ip: "127.0.0.1", port: "6777" }]);
 };
-
 if (require.main === module) {
   startTorrent(file, dest);
 }
