@@ -26,6 +26,14 @@ class Seeder {
 
     if (this.islistening) {
       if (global.config.debug) console.log("Server is listening");
+      var address = self.server.address();
+      var port = address.port;
+      var family = address.family;
+      var ipaddr = address.address;
+      if (global.config.debug)
+        console.log("Server is listening at port" + port);
+      if (global.config.debug) console.log("Server ip :" + ipaddr);
+      if (global.config.debug) console.log("Server is IP4/IP6 : " + family);
     } else {
       if (global.config.debug) console.log("Server is not listening");
     }

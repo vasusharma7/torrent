@@ -1,5 +1,3 @@
-const electron = require("electron");
-const { ipcRenderer: ipc } = electron;
 const fs = require("fs");
 const tracker = require("./tracker");
 const bencode = require("bencode");

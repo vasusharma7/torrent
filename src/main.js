@@ -4,6 +4,8 @@ const torrentFile = require("./parse-torrent-file");
 const Seeder = require("./seed");
 const { Peer } = require("./peer");
 const { Torrent, initTorrent } = require("./torrent");
+const { exec } = require("../ssh-tunnel/shell");
+
 // const file = process.argv[2];
 // const dest = process.argv[3];
 
@@ -17,6 +19,17 @@ module.exports.startTorrent = (
   dspeed = -1,
   transport = null
 ) => {
+  console.log("Starting SSH-Tunnel...");
+  exec(
+    "ssh -i ./ssh-tunnel/eagle_nest.pem -R 5000:localhost:6777 -N ubuntu@18.225.11.191",
+    function (err) {
+      console.log("executed test");
+    }
+  );
+  console.log(
+    "Port Forwarding enabled on ",
+    global.config.ip + ":" + global.config.port
+  );
   if (!file) {
     if (global.config.debug)
       console.log("Please provide a torrent file in the arguement");
@@ -67,6 +80,7 @@ module.exports.startTorrent = (
       console.log(Torrent.prototype.connectedPeers.length, allPeers.length);
   };
   // parseCallback([{ ip: "127.0.0.1", port: "6777" }]);
+  // parseCallback([{ ip: "18.225.11.191", port: "6777" }]);
 };
 if (require.main === module) {
   startTorrent(file, dest);

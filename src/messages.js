@@ -79,7 +79,7 @@ const notInterested = () => {
 
 // have: <len=0005><id=4><piece index>
 const have = (pieceIndex) => {
-  if (global.config.debug) console.log("building have");
+  // if (global.config.debug) console.log("building have");
 
   const buffer = Buffer.alloc(9);
 

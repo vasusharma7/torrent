@@ -90,9 +90,14 @@ class Peer extends Torrent {
         let index = Torrent.prototype.connectedPeers.indexOf(this);
         if (index === -1) {
           if (global.config.debug)
-            console.log("Error in connection with a new Peer", this.info.ip);
+            console.log(
+              "Error in connection with a new Peer",
+              this.info.ip,
+              this.info.port,
+              err
+            );
+          clearInterval(this.sendHavesI);
           this.socket.destroy();
-          // clg(error code  - generally timeout or epipe )
           return;
         }
         Torrent.prototype.connectedPeers.splice(index, 1);
@@ -120,7 +125,8 @@ class Peer extends Torrent {
         var bwrite = this.socket.bytesWritten;
         if (global.config.debug) console.log("Bytes read : " + bread);
         if (global.config.debug) console.log("Bytes written : " + bwrite);
-        if (global.config.debug) console.log("Socket closed!");
+        if (global.config.debug)
+          console.log("Socket closed!", this.info.ip, this.info.port);
         if (error) {
           if (global.config.debug)
             console.log("Socket was closed coz of transmission error", error);
@@ -198,7 +204,8 @@ class Peer extends Torrent {
             "ignore - keep alive",
             parsed.id,
             parsed.len,
-            this.info.ip
+            this.info.ip,
+            this.info.port
           );
         break;
       case "cancel":
@@ -269,6 +276,7 @@ class Peer extends Torrent {
   };
 
   handleUnChoke = (parsed) => {
+    if (global.config.debug) console.log("unchoke received");
     Torrent.prototype.unchokedMeList.push(this);
     if (global.config.electron) {
       Torrent.prototype.transport(
@@ -303,13 +311,13 @@ class Peer extends Torrent {
         "xxxxxxxxxxxxxxxxxxxxxxxxx-----------------SOMEONE IS INTERESTED----------------xxxxxxxxxxxxxxxxxxxxxxxxxxxx",
         parsed
       );
-    if (this.state.amChoking === false) {
+    if (this.state.amChoking === true) {
       this.socket.write(messages.unChoke());
       this.state.amChoking = false;
     }
 
     //send bitfield to the peer and wait for the request
-    let sendHavesI = setInterval(() => {
+    this.sendHavesI = setInterval(() => {
       if (this.downloaded.size !== 0) {
         this.sendHaves(this);
         // setTimeout(() => clearInterval(sendHavesI), 5000);

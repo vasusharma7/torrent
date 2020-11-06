@@ -124,7 +124,6 @@ const run = async () => {
       info = await askMakeTorrent();
       let trackerURLS = [
         "udp://public.popcorn-tracker.org:6969/announce",
-        "udp://public.popcorn-tracker.org:6969/announce",
         "http://bt2.careland.com.cn:6969/announce",
       ];
       makeTorrent(info.location, trackerURLS, info.type == "folder");

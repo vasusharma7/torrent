@@ -281,8 +281,8 @@ class Torrent {
     this.connectedPeers.forEach((peer) => {
       if (global.config.debug) console.log(peer.info.ip);
     });
-    Torrent.prototype.top4I = setInterval(this.topFour, 100);
-    Torrent.prototype.optChI = setInterval(this.optimisticUnchoke, 300);
+    // Torrent.prototype.top4I = setInterval(this.topFour, 10000);
+    // Torrent.prototype.optChI = setInterval(this.optimisticUnchoke, 30000);
   };
 
   closeConnections = () => {
@@ -445,7 +445,12 @@ class Torrent {
       console.log("Have sent to interested", peer.info.ip, "of - ", sent);
   };
   servePiece = (peer, { index, begin, length }) => {
-    let size = this.pieceLen;
+    if (global.config.debug) console.log("A piece is requested");
+
+    let size =
+      this.lastPiece == index
+        ? this.getFileLength(-1) - this.pieceLen * (this.pieces.length - 1)
+        : this.pieceLen;
     if (length > 16384) {
       if (global.config.debug) console.log("rejected");
       return;

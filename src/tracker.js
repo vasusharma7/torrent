@@ -4,7 +4,6 @@ const urlParse = require("url").parse;
 const crypto = require("crypto"); // 1
 const torrentUtils = require("./torrent-file-utils");
 const port = global.config.myPort;
-const publicIp = require("public-ip");
 
 // const port = 0x1AE7
 
@@ -114,15 +113,14 @@ function buildAnnounceReq(torrent, connId) {
 
   //ip address
   //set to zero because I want tracker to use the IP address of sender of this UDP packet i.e. ultimately my IP
-  (async () => {
-    let ip = await publicIp.v4();
 
-    ip = ip.split(".");
+  let ip = global.config.ip;
 
-    ip.forEach((byte, key) => {
-      buf.writeUInt8(parseInt(byte), 84 + key);
-    });
-  })();
+  ip = ip.split(".");
+
+  ip.forEach((byte, key) => {
+    buf.writeUInt8(parseInt(byte), 84 + key);
+  });
 
   // buf.writeUInt32BE(0, 84);
 
