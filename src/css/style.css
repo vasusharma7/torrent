@@ -1,0 +1,67 @@
+.fileupload {
+  width: 200px;
+  height: 100px;
+  position: relative;
+  overflow: hidden;
+  background: #ffffff; /* and other things to make it pretty */
+}
+
+.fileupload input {
+  position: absolute;
+  top: 0;
+  right: 0; /* not left, because only the right part of the input seems to
+                 be clickable in some browser I can't remember */
+  cursor: pointer;
+  opacity: 0;
+  filter: alpha(
+    opacity=0
+  ); /* and all the other old opacity stuff you
+                                 want to support */
+  font-size: 200px; /* wtf, but apparently the most reliable way to make
+                         a large part of the input clickable in most browsers */
+  height: 200px;
+}
+
+.t-main {
+  background-color: #ccc;
+  border-radius: 5px;
+  margin: 12px;
+  padding-left: 10px;
+  /* border: 1px solid #1692da; */
+  border: 1px solid black;
+}
+.t-main:hover {
+  background-color: #aaa;
+}
+
+.btn-root {
+  font-size: 1.25em;
+}
+
+.hidden {
+  display: none !important;
+}
+.view {
+  display: flex !important;
+}
+.file::before {
+  content: "|-";
+  background-color: #eee;
+}
+
+.folder {
+  background-color: #ccc;
+}
+th,
+td,
+tr {
+  text-align: center;
+}
+
+.table-striped tr:nth-child(even) {
+  background-color: #aaa;
+}
+
+label {
+  font-size: 1.25em;
+}
