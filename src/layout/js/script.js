@@ -32,4 +32,4 @@ function move(width) {
   }
 }
 
-toggle("main");
+toggle("root");

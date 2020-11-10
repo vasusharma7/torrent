@@ -12,7 +12,19 @@ const { electron } = require("process");
 
 // const torrentUtils = require("./src/torrent-file-utils");
 // const axios = require("axios");
-
+function connect(index) {
+  console.log("heloo ther");
+  exec(global.config.ssh[index], function (err) {
+    if (err) {
+      console.log(err);
+      if (index < 2) connect(index + 1);
+    }
+    if (global.config.info)
+      console.log(
+        `[Proxy Tunnel]: Connected to Remote Proxy Tunnel[${global.config.ip}]`
+      );
+  });
+}
 module.exports.startTorrent = (
   file,
   dest,
@@ -24,19 +36,13 @@ module.exports.startTorrent = (
     electron = false,
   }
 ) => {
-  // console.log("Starting SSH-Tunnel...");
-  // exec(global.config.activate, function (err) {
-  //   if (global.config.info)
-  //     console.log("[Proxy Tunnel]: Establishing Connection..");
-  //   if (err) console.log(err);
-  // });
-  // exec(global.config.ssh, function (err) {
-  //   if (err) console.log(err);
-  //   if (global.config.info)
-  //     console.log(
-  //       `[Proxy Tunnel]: Connected to Remote Proxy Tunnel[${global.config.ip}]`
-  //     );
-  // });
+  if (global.config.info) console.log("Starting SSH-Tunnel...");
+  exec(global.config.activate, function (err) {
+    if (global.config.info)
+      console.log("[Proxy Tunnel]: Establishing Connection..");
+    if (err) console.log(err);
+  });
+  connect(0);
   if (!file) {
     if (global.config.debug)
       console.log("Please provide a torrent file in the arguement");
@@ -46,6 +52,7 @@ module.exports.startTorrent = (
     dest = ".";
   }
   Torrent.prototype.transport = transport;
+  Torrent.prototype.electron = electron;
   const { torrent, pieces, pieceLen, files } = torrentFile.init(file, dest);
   let seeder = new Seeder(
     global.config.hostname,
@@ -56,7 +63,7 @@ module.exports.startTorrent = (
     pieceLen
   );
   seeder.execute();
-  initTorrent(files, pieces, uspeed, dspeed, maxConnections, electron);
+  initTorrent(files, pieces, uspeed, dspeed, maxConnections);
 
   torrentFile.parse(torrent, (peers) => parseCallback(peers));
   const parseCallback = (peers) => {

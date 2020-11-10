@@ -116,14 +116,18 @@ ipc.on("torrent-info", (evt, info) => {
     2
   );
 });
-
+ipc.on("status", (evt, status) => {
+  document.getElementById("t-status").innerText = status;
+});
 ipc.on("progress", (evt, data) => {
-  console.log("progress", data);
   document.getElementById("d-size").innerText = data;
   const size = parseInt(document.getElementById("t-size").innerText);
   document.getElementById("t-percent").innerText =
     Math.min(100, (data / size) * 100).toFixed(0) + "%";
-  move(Math.ceil((data / size) * 100));
+  const width = Math.ceil((data / size) * 100);
+  move(width);
+  if (width >= 100) document.getElementById("t-status").innerText = "Seeding";
+  else document.getElementById("t-status").innerText = "Downloading";
 });
 
 ipc.on("d-speed", (evt, data) => {

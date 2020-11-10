@@ -65,3 +65,7 @@ tr {
 label {
   font-size: 1.25em;
 }
+
+.options {
+  width: 100%;
+}

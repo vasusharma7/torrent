@@ -22,28 +22,24 @@
   </head>
 
   <body>
-    <div class="window" style="background-color: #bbb">
+    <div class="window">
       <header class="toolbar toolbar-header">
         <h1 class="title">VS Torrent</h1>
         <div class="toolbar-actions">
-          <div class="btn-group">
-            <button class="btn btn-default" onClick="toggle('root')">
-              <span class="icon icon-home icon-text"></span>Home
-            </button>
-            <button class="btn btn-default">
-              <span class="icon icon-folder"></span>
-            </button>
-            <button class="btn btn-default active">
-              <span class="icon icon-cloud"></span>
-            </button>
-            <button class="btn btn-default">
-              <span class="icon icon-popup"></span>
-            </button>
-            <button class="btn btn-default">
-              <span class="icon icon-shuffle"></span>
-            </button>
-          </div>
-
+          <button class="btn btn-default" onClick="toggle('root')">
+            <span class="icon icon-home icon-text"></span>Home
+          </button>
+          <button class="btn btn-default" onClick="toggle('make_torrent')">
+            <span class="icon icon-tools icon-text"></span>Make Torrent
+          </button>
+          <button class="btn btn-default" onClick="toggle('main')">
+            <span class="icon icon-download icon-text"></span>
+            Download Torrent
+          </button>
+          <button class="btn btn-default" onClick="toggle('play')" disabled>
+            <span class="icon icon-play icon-text"></span>
+            Ongoing Torrent
+          </button>
           <button class="btn btn-default pull-right">
             <span class="icon icon-info icon-text"></span>Info
           </button>
@@ -76,8 +72,8 @@
               class="d-flex flex-row justify-content-center align-items-center"
               style="width: 50vw"
             >
-              <div class="row">
-                <div class="w3-container">
+              <div class="row justify-content-center">
+                <div class="w3-container p-2">
                   <button
                     class="btn btn-large btn-primary btn-root"
                     id="download"
@@ -86,7 +82,7 @@
                     Download Torrent
                   </button>
                 </div>
-                <div class="w3-container">
+                <div class="w3-container p-2">
                   <button
                     class="btn btn-large btn-primary btn-root"
                     id="make"
@@ -201,7 +197,12 @@
         <div
           id="main"
           class="hidden d-flex justify-content-center"
-          style="width: 100%; background-color: #bbb"
+          style="
+            width: 100%;
+            background-color: #bbb;
+            height: 120vh;
+            overflow: hidden;
+          "
         >
           <div class="d-flex justify-content-center" style="padding: 10px">
             <div class="d-flex flex-column">
@@ -246,32 +247,44 @@
                     <h6 id="folder-chosen"></h6>
                   </div>
                 </div>
-                <div class="form-control">
-                  <label>Maximum Upload Speed</label>
-                  <input
-                    id="setUspeed"
-                    type="number"
-                    class="form-control"
-                    placeholder="Upload Speed"
-                  />
-                  <label>Maximum Download Speed</label>
-                  <input
-                    id="setDspeed"
-                    type="number"
-                    class="form-control"
-                    placeholder="Download Speed"
-                  />
-                  <label>Maximum Peer Connections</label>
-                  <input
-                    id="setPeers"
-                    type="number"
-                    class="form-control"
-                    placeholder="Maximum Peer Connections"
-                  />
+                <div class="row justify-content-center">
+                  <span class="col-md-3 col-xs-12">
+                    <label>Maximum Upload Speed</label>
+                    <input
+                      id="setUspeed"
+                      type="number"
+                      class="form-control options"
+                      placeholder="Upload Speed"
+                    />
+                  </span>
+                  <span class="col-md-3 col-xs-12">
+                    <label>Maximum Download Speed</label>
+                    <input
+                      id="setDspeed"
+                      type="number"
+                      class="form-control options"
+                      placeholder="Download Speed"
+                    />
+                  </span>
+                  <span class="col-md-3 col-xs-12">
+                    <label>Maximum Peer Connections</label>
+                    <input
+                      id="setPeers"
+                      type="number"
+                      class="form-control options"
+                      placeholder="Maximum Peer Connections"
+                    />
+                  </span>
                 </div>
-                <button class="btn btn-large btn-primary" disabled id="proceed">
-                  Proceed
-                </button>
+                <div class="container m-3">
+                  <button
+                    class="btn btn-large btn-primary"
+                    disabled
+                    id="proceed"
+                  >
+                    Proceed
+                  </button>
+                </div>
               </center>
             </div>
           </div>
@@ -342,7 +355,22 @@
                     <h3 class="title" style="font-size: 1em">Metadata</h3>
                   </center>
                 </li>
-
+                <li class="list-group-item" style="font-size: 1em">
+                  <span class="row">
+                    <span
+                      class="icon icon-record col-md-1"
+                      style="color: aqua"
+                    ></span>
+                    <span style="padding-left: 10px" class="col-lg-5 col-sm-11"
+                      ><strong>Status</strong></span
+                    >
+                    <span style="padding-left: 10px" class="col-lg-6 col-xs-12">
+                      <p>
+                        <span id="t-status">Fetching Status..</span>
+                      </p>
+                    </span>
+                  </span>
+                </li>
                 <li class="list-group-item" style="font-size: 1em">
                   <span class="row">
                     <span

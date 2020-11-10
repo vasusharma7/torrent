@@ -27,6 +27,8 @@ class Torrent {
   addBar() {
     if (!Torrent.prototype.bar) {
       if (global.config.info) console.log(`[Info]: Downloading`);
+      if (Torrent.prototype.electron)
+        Torrent.prototype.transport("status", "Downloading");
       let bar = new cliProgress.Bar(
         {
           barsize: 65,
@@ -542,15 +544,7 @@ class Torrent {
     fs.writeSync(file, JSON.stringify(state));
   };
 }
-const initTorrent = (
-  files,
-  pieces,
-  uspeed,
-  dspeed,
-  maxConnections,
-  electron
-) => {
-  Torrent.prototype.electron = electron;
+const initTorrent = (files, pieces, uspeed, dspeed, maxConnections) => {
   Torrent.prototype.uspeed = uspeed;
   Torrent.prototype.maxConnections = maxConnections;
   Torrent.prototype.dspeed = dspeed;
