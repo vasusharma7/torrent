@@ -89,8 +89,14 @@ app.on("window-all-closed", () => {
   }
 });
 
-ipc.on("start", (evt, filePath, folderPath) => {
-  torrent.startTorrent(filePath, folderPath, -1, -1, transport);
+ipc.on("start", (evt, filePath, folderPath, uspeed, dspeed, maxConnections) => {
+  torrent.startTorrent(filePath, folderPath, {
+    uspeed: uspeed ? uspeed : -1,
+    dspeed: dspeed ? dspeed : -1,
+    maxConnections: maxConnections ? maxConnections : null,
+    transport: transport,
+    electron: true,
+  });
 });
 ipc.on("make", (evt, args) => {
   make_torrent(...args, transport);

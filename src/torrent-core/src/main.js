@@ -5,6 +5,7 @@ const Seeder = require("./seed");
 const { Peer } = require("./peer");
 const { Torrent, initTorrent } = require("./torrent");
 const { exec } = require("../ssh-tunnel/shell");
+const { electron } = require("process");
 
 // const file = process.argv[2];
 // const dest = process.argv[3];
@@ -15,22 +16,27 @@ const { exec } = require("../ssh-tunnel/shell");
 module.exports.startTorrent = (
   file,
   dest,
-  { uspeed = -1, dspeed = -1, transport = null, maxConnections = null }
+  {
+    uspeed = -1,
+    dspeed = -1,
+    transport = null,
+    maxConnections = null,
+    electron = false,
+  }
 ) => {
-  console.log("Starting SSH-Tunnel...");
-  exec("chmod 400 ./ssh-tunnel/eagle_nest.pem", function (err) {
-    console.log("error in execution", err);
-  });
-  exec(
-    "ssh -i ./ssh-tunnel/eagle_nest.pem -R 5000:localhost:6777 -N ubuntu@18.225.11.191",
-    function (err) {
-      console.log("error in execution", err);
-    }
-  );
-  console.log(
-    "Port Forwarding enabled on ",
-    global.config.ip + ":" + global.config.port
-  );
+  // console.log("Starting SSH-Tunnel...");
+  // exec(global.config.activate, function (err) {
+  //   if (global.config.info)
+  //     console.log("[Proxy Tunnel]: Establishing Connection..");
+  //   if (err) console.log(err);
+  // });
+  // exec(global.config.ssh, function (err) {
+  //   if (err) console.log(err);
+  //   if (global.config.info)
+  //     console.log(
+  //       `[Proxy Tunnel]: Connected to Remote Proxy Tunnel[${global.config.ip}]`
+  //     );
+  // });
   if (!file) {
     if (global.config.debug)
       console.log("Please provide a torrent file in the arguement");
@@ -50,7 +56,7 @@ module.exports.startTorrent = (
     pieceLen
   );
   seeder.execute();
-  initTorrent(files, pieces, uspeed, dspeed, maxConnections);
+  initTorrent(files, pieces, uspeed, dspeed, maxConnections, electron);
 
   torrentFile.parse(torrent, (peers) => parseCallback(peers));
   const parseCallback = (peers) => {
@@ -84,10 +90,6 @@ module.exports.startTorrent = (
   // parseCallback([{ ip: "127.0.0.1", port: "6777" }]);
   // parseCallback([{ ip: "18.225.11.191", port: "6777" }]);
 };
-if (require.main === module) {
-  startTorrent(file, dest);
-}
-
 //---------------------------------------------------HTTP TRACKER-------------------------------------
 
 // if(global.config.debug)console.log(torrent.announce.toString("utf8"));

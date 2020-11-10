@@ -150,6 +150,7 @@ class Peer extends Torrent {
           this.parseData(this.buffer.slice(0, this.msgLen(this.buffer)));
           this.buffer = this.buffer.slice(this.msgLen(this.buffer));
           if (!this.handshake) {
+            this.display();
             if (
               Torrent.prototype.maxConnections &&
               Torrent.prototype.connectedPeers.length >=
@@ -164,7 +165,7 @@ class Peer extends Torrent {
               return;
             }
             Torrent.prototype.connectedPeers.push(this);
-            if (global.config.electron) {
+            if (Torrent.prototype.electron) {
               let data = [];
               this.connectedPeers.forEach((peer) =>
                 data.push({
@@ -243,7 +244,6 @@ class Peer extends Torrent {
       0,
       this.downloadedBuffer.length / (this.track.end - this.track.start)
     );
-
     this.showSpeed();
     // if(global.config.debug)console.log("speed", this.track.speed);
   };
@@ -291,7 +291,7 @@ class Peer extends Torrent {
   handleUnChoke = (parsed) => {
     if (global.config.debug) console.log("unchoke received");
     Torrent.prototype.unchokedMeList.push(this);
-    if (global.config.electron) {
+    if (Torrent.prototype.electron) {
       Torrent.prototype.transport(
         "t-unchoked",
         this.unchokedMeList.map((peer) => {

@@ -6,19 +6,15 @@
   "dependencies": {
     "argparse": "^2.0.1",
     "axios": "^0.20.0",
-    "bencode": "^2.0.1",
     "chalk": "^4.1.0",
     "child-process": "^1.0.2",
     "clear": "^0.1.0",
     "cli-progress": "^3.8.2",
     "clui": "^0.3.6",
-    "death": "^1.1.0",
     "figlet": "^1.5.0",
     "inquirer": "^7.3.3",
-    "public-ip": "^4.0.2",
     "random-bytes-seed": "^1.0.3",
-    "shelljs": "^0.8.4",
-    "vs-stun": "0.0.7"
+    "shelljs": "^0.8.4"
   },
   "devDependencies": {},
   "scripts": {

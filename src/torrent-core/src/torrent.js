@@ -24,10 +24,41 @@ class Torrent {
       Torrent.prototype.state.uploadEvent = true;
     }
   }
+  addBar() {
+    if (!Torrent.prototype.bar) {
+      if (global.config.info) console.log(`[Info]: Downloading`);
+      let bar = new cliProgress.Bar(
+        {
+          barsize: 65,
+        },
+        {
+          format:
+            "Progress " +
+            _colors.cyan(" {bar}") +
+            " {percentage}% | ETA: {eta}s | {value}/{total} | Speed: {speed} kB/s | U.Speed: {uSpeed} kB/s",
+          barCompleteChar: "\u2588",
+          barIncompleteChar: "\u2591",
+        }
+      );
+      bar.start(
+        (
+          this.files.map((file) => file.size).reduce((a, b) => a + b) / 1024
+        ).toFixed(2),
+        0,
+        {
+          speed: "0",
+          uSpeed: "0",
+        }
+      );
+      Torrent.prototype.bar = bar;
+    }
+  }
   display() {
     // write(ansiEscapes.clearScreen + ansiEscapes.cursorTo(0, 1));
     if (global.config.progress) {
-      write(ansiEscapes.cursorSavePosition + ansiEscapes.cursorTo(0, 10));
+      this.addBar();
+      write(ansiEscapes.cursorRestorePosition);
+      write(ansiEscapes.cursorSavePosition + ansiEscapes.cursorTo(0, 15));
       const size = (
         this.files.map((file) => file.size).reduce((a, b) => a + b) / 1024
       ).toFixed(2);
@@ -37,7 +68,7 @@ class Torrent {
           ((this.downloaded.size * this.pieceLen) / 1024).toFixed(2)
         )
       );
-      if (global.config.electron) {
+      if (Torrent.prototype.electron) {
         Torrent.prototype.transport(
           "progress",
           Math.min(size, (this.downloaded.size * this.pieceLen) / 1024).toFixed(
@@ -52,7 +83,7 @@ class Torrent {
       console.table(data);
       // write(ansiEscapes.cursorSavePosition + ansiEscapes.cursorTo(0, 40));
       let info = {
-        Torrent: Torrent.prototype.name.substring(0, 10),
+        Torrent: Torrent.prototype.name.substring(0, 30),
         Size: `${size} KB | ${size / 1024} MB`,
       };
       console.table(info);
@@ -73,7 +104,8 @@ class Torrent {
     if (speed > this.uspeed) {
       this.limitUSpeed = true;
     }
-    if (global.config.electron) Torrent.prototype.transport("u-speed", speed);
+    if (Torrent.prototype.electron)
+      Torrent.prototype.transport("u-speed", speed);
     if (global.config.progress) this.bar.update({ uSpeed: speed });
   };
   showSpeed = () => {
@@ -90,7 +122,7 @@ class Torrent {
       speedMap = speedMap.sort((a, b) => b.speed - a.speed);
       while (speed > this.dspeed) {
         if (speedMap.length > 1) {
-          console.log("Limiting Speed");
+          // console.log("Limiting Speed");
           let ele = speedMap.pop();
           speed -= ele.speed;
           ele.peer.state.turtled = true;
@@ -103,7 +135,8 @@ class Torrent {
     } else {
       Torrent.prototype.limitDSpeed = false;
     }
-    if (global.config.electron) Torrent.prototype.transport("d-speed", speed);
+    if (Torrent.prototype.electron)
+      Torrent.prototype.transport("d-speed", speed);
     if (global.config.progress) this.bar.update({ speed: speed });
   };
   showProgress = () => {
@@ -509,7 +542,15 @@ class Torrent {
     fs.writeSync(file, JSON.stringify(state));
   };
 }
-const initTorrent = (files, pieces, uspeed, dspeed, maxConnections) => {
+const initTorrent = (
+  files,
+  pieces,
+  uspeed,
+  dspeed,
+  maxConnections,
+  electron
+) => {
+  Torrent.prototype.electron = electron;
   Torrent.prototype.uspeed = uspeed;
   Torrent.prototype.maxConnections = maxConnections;
   Torrent.prototype.dspeed = dspeed;
@@ -528,31 +569,5 @@ const initTorrent = (files, pieces, uspeed, dspeed, maxConnections) => {
   Torrent.prototype.unChokedPeers = new Set();
   Torrent.prototype.state = { uploadEvent: false, uploadStart: false };
   Torrent.prototype.isComplete = false;
-  if (global.config.progress) {
-    let bar = new cliProgress.Bar(
-      {
-        barsize: 65,
-      },
-      {
-        format:
-          "Progress " +
-          _colors.cyan(" {bar}") +
-          " {percentage}% | ETA: {eta}s | {value}/{total} | Speed: {speed} kB/s | U.Speed: {uSpeed} kB/s",
-        barCompleteChar: "\u2588",
-        barIncompleteChar: "\u2591",
-      }
-    );
-    bar.start(
-      (files.map((file) => file.size).reduce((a, b) => a + b) / 1024).toFixed(
-        2
-      ),
-      0,
-      {
-        speed: "0",
-        uSpeed: "0",
-      }
-    );
-    Torrent.prototype.bar = bar;
-  }
 };
 module.exports = { Torrent, initTorrent };

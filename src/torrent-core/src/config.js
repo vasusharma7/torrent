@@ -1,18 +1,13 @@
 module.exports = global.config = {
-  // debug: false,
-  // port: 6777,
-  // hostname: "0.0.0.0",
-  // maxConnections: 10,
-  // progress: true,
-  // electron: true,
-  debug: true,
+  debug: false,
   port: 6777,
   hostPort: 6777,
   hostname: "0.0.0.0",
   maxConnections: 10,
   progress: true,
-  electron: false,
+  info: true,
+  activate: "chmod 400 ./ssh-tunnel/eagle_nest.pem",
   ssh:
-    "ssh -i ~/keys/eagle_nest.pem -R 5000:localhost:6777 -N ubuntu@18.225.11.191",
+    "ssh -i ./ssh-tunnel/eagle_nest.pem -R 5000:localhost:6777 -N ubuntu@18.225.11.191",
   ip: "18.225.11.191",
 };

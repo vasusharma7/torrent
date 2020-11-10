@@ -32,4 +32,4 @@ function move(width) {
   }
 }
 
-toggle("make_torrent");
+toggle("main");

@@ -13,8 +13,18 @@
   "license": "ISC",
   "devDependencies": {},
   "dependencies": {
+    "argparse": "^2.0.1",
+    "axios": "^0.20.0",
+    "chalk": "^4.1.0",
+    "child-process": "^1.0.2",
+    "clear": "^0.1.0",
+    "cli-progress": "^3.8.2",
+    "clui": "^0.3.6",
+    "figlet": "^1.5.0",
+    "inquirer": "^7.3.3",
+    "random-bytes-seed": "^1.0.3",
+    "shelljs": "^0.8.4",
     "electron": "^8.2.5",
-    "electron-photon": "^1.1.6",
     "electron-reload": "^1.5.0"
   }
 }

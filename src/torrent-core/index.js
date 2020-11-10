@@ -13,12 +13,17 @@ const parser = new ArgumentParser({
   description: "VS Torrent",
 });
 parser.add_argument("-v", "--version", { action: "version", version });
+
 parser.add_argument("-d", "--download", {
   help: "Path to Torrent file to download",
 });
 
 parser.add_argument("-c", "--connections", {
   help: "Maximum Peer Connections",
+});
+
+parser.add_argument("-n", "--name", {
+  help: "Name of torrent file to be created",
 });
 
 parser.add_argument("-m", "--make", {
@@ -30,7 +35,7 @@ parser.add_argument("-t", "--type", {
 });
 
 parser.add_argument("-l", "--location", {
-  help: "Path of Location to donwload Torrent or save newly created file",
+  help: "Path to donwload Torrent or save newly created file",
 });
 
 parser.add_argument("-w", "--trackerURLs", {
@@ -71,6 +76,7 @@ const askTorrentQuestions = () => {
         }
       },
     },
+
     {
       type: "input",
       name: "connections",
@@ -156,6 +162,18 @@ const askMakeTorrent = () => {
         }
       },
     },
+    {
+      type: "input",
+      name: "name",
+      message: "Name of torrent file without extension",
+      validate: function (value) {
+        if (value.length) {
+          return true;
+        } else {
+          return "Please enter valid name.";
+        }
+      },
+    },
   ];
   return inquirer.prompt(questions);
 };
@@ -188,7 +206,9 @@ const run = async () => {
       makeTorrent(
         info.location,
         info.trackerURLS.split(","),
-        info.type == "folder"
+        info.type == "folder",
+        info.destination,
+        info.name
       );
     } else {
       info = await askTorrentQuestions();
@@ -202,6 +222,10 @@ const run = async () => {
   } else {
     const args = parser.parse_args();
     console.log(args);
+    if (!args.location) {
+      console.log("Please provide location to save torrent, use -h for help");
+      return;
+    }
     if (args.download) {
       startTorrent(args.download, args.location, {
         maxConnections: parseInt(args.connections),
@@ -209,10 +233,16 @@ const run = async () => {
         dspeed: parseInt(args.download_speed),
       });
     } else if (args.make) {
+      if (!(args.trackerURLs && args.type && args.location && args.name)) {
+        console.log("Please provide all options, use -h for help");
+        return;
+      }
       makeTorrent(
         args.make,
         args.trackerURLs.split(","),
-        args.type == "folder" || args.type == "1"
+        args.type == "folder" || args.type == "1",
+        args.location,
+        args.name
       );
     }
   }

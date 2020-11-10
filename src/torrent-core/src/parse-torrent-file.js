@@ -8,6 +8,7 @@ const { Torrent } = require("./torrent");
 const main = require("./main");
 
 module.exports.init = (filename, dest) => {
+  if (global.config.info) console.log(`[Info]: Reading Torrent File`);
   let file = -1;
   try {
     file = fs.readFileSync(filename);
@@ -88,7 +89,7 @@ module.exports.init = (filename, dest) => {
   Torrent.prototype.name = torrent.info.name.toString("utf8");
   //perhaps number of files
   // if(global.config.debug)console.log(torrent.info.files[0].path.toString())
-  if (global.config.electron) {
+  if (Torrent.prototype.electron) {
     let info = {
       "t-name": Torrent.prototype.name,
       "t-by": torrent["created by"]
@@ -109,33 +110,40 @@ module.exports.init = (filename, dest) => {
   return { torrent: torrent, pieces: pieces, pieceLen: peiceLen, files: files };
 };
 
-const manipulateState = (torrent) => {
-  const statePath = path.join(
-    path.dirname(require.main.filename),
-    `.${Torrent.prototype.name}.json`
-  );
-  const file = fs.openSync(statePath, "a+");
+// const manipulateState = (torrent) => {
+//   const statePath = path.join(
+//     path.dirname(require.main.filename),
+//     `.${Torrent.prototype.name}.json`
+//   );
+//   const file = fs.openSync(statePath, "a+");
 
-  let stateInfo = {};
-  try {
-    stateInfo = JSON.parse(fs.readFileSync(statePath, "utf8"));
-  } catch (err) {
-    if (global.config.debug) console.log("A new torrent is added");
-  }
-  stateInfo[torrent.info.name.toString("utf8")] = { status: "downloading" };
-  fs.writeFileSync(statePath, JSON.stringify(stateInfo));
-  fs.closeSync(file);
-};
+//   let stateInfo = {};
+//   try {
+//     stateInfo = JSON.parse(fs.readFileSync(statePath, "utf8"));
+//   } catch (err) {
+//     if (global.config.debug) console.log("A new torrent is added");
+//   }
+//   stateInfo[torrent.info.name.toString("utf8")] = { status: "downloading" };
+//   fs.writeFileSync(statePath, JSON.stringify(stateInfo));
+//   fs.closeSync(file);
+// };
 
 module.exports.parse = async (torrent, callback) => {
-  let urls = [torrent.announce.toString()];
+  let urls = [];
+  try {
+    urls = [torrent.announce.toString()];
+  } catch {}
   // let urls = [torrent["announce-list"][1].toString()]
   if (torrent["announce-list"] && torrent["announce-list"].length) {
     torrent["announce-list"].forEach((url) => {
       urls.push(...url.toString().split(","));
     });
   }
-  if (global.config.electron) {
+  if (global.config.info)
+    console.log(
+      `[Info]: Contacting Trackers ( Found ${urls.length} trackers )`
+    );
+  if (Torrent.prototype.electron) {
     Torrent.prototype.transport("t-trackers", urls);
   }
 

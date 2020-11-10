@@ -197,101 +197,21 @@
             </div>
           </div>
         </div>
-        <div
-          class="hidden d-flex flex-column justify-content-center align-items-center"
-          style="width: 100%; background-color: #bbb"
-        >
-          <div>
-            <div
-              class="d-flex flex-row justify-content-center align-items-center"
-              style="width: 80vw"
-            >
-              <div class="row">
-                <div class="container">
-                  <h1>Make Torrent</h1>
-                </div>
-                <form>
-                  <div class="form-group">
-                    <div class="radio"></div>
-                    <span>
-                      <label>Email address</label>
-                      <input
-                        type="email"
-                        class="form-control"
-                        placeholder="Email"
-                      />
-                    </span>
-                  </div>
-                  <div class="form-group">
-                    <label>Password</label>
-                    <input
-                      type="password"
-                      class="form-control"
-                      placeholder="Password"
-                    />
-                  </div>
-                  <div class="form-group">
-                    <label>Description</label>
-                    <textarea class="form-control" rows="3"></textarea>
-                  </div>
-                  <select class="form-control">
-                    <option>Option one</option>
-                    <option>Option two</option>
-                    <option>Option three</option>
-                    <option>Option four</option>
-                    <option>Option five</option>
-                    <option>Option six</option>
-                    <option>Option seven</option>
-                    <option>Option eight</option>
-                  </select>
-                  <div class="checkbox">
-                    <label>
-                      <input type="checkbox" /> This is a checkbox
-                    </label>
-                  </div>
-                  <div class="checkbox">
-                    <label>
-                      <input type="checkbox" /> This is a checkbox too
-                    </label>
-                  </div>
 
-                  <div class="form-actions">
-                    <button type="submit" class="btn btn-form btn-default">
-                      Cancel
-                    </button>
-                    <button type="submit" class="btn btn-form btn-primary">
-                      OK
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-
-            <div
-              class="d-flex flex-row justify-content-center align-items-center"
-              style="width: 50vw"
-            >
-              <div class="row"></div>
-            </div>
-          </div>
-        </div>
         <div
           id="main"
-          class="hidden d-flex justify-content-center align-items-center"
+          class="hidden d-flex justify-content-center"
           style="width: 100%; background-color: #bbb"
         >
-          <div
-            class="d-flex justify-content-center align-items-center"
-            style="padding: 10px"
-          >
+          <div class="d-flex justify-content-center" style="padding: 10px">
             <div class="d-flex flex-column">
               <center>
-                <div class="p-2 align-items-center">
+                <div class="p-2">
                   <h1>Complete the Setup</h1>
                 </div>
 
                 <div class="p-2">
-                  <div class="d-flex flex-row align-items-center">
+                  <div class="d-flex flex-row justify-content-center">
                     <div class="p-2 mr-5">
                       <h4>Choose a torrent file</h4>
                     </div>
@@ -304,12 +224,12 @@
                       </span>
                     </div>
                   </div>
-                  <div class="p-2 align-items-center">
+                  <div class="p-2 justify-content-center">
                     <h6 id="file-chosen"></h6>
                   </div>
                 </div>
                 <div class="p-2">
-                  <div class="d-flex flex-row align-items-center">
+                  <div class="d-flex flex-row justify-content-center">
                     <div class="p-2 mr-4">
                       <h4>Select Location to save</h4>
                     </div>
@@ -322,11 +242,33 @@
                       </span>
                     </div>
                   </div>
-                  <div class="p-2 align-items-center">
+                  <div class="p-2 justify-content-center">
                     <h6 id="folder-chosen"></h6>
                   </div>
                 </div>
-
+                <div class="form-control">
+                  <label>Maximum Upload Speed</label>
+                  <input
+                    id="setUspeed"
+                    type="number"
+                    class="form-control"
+                    placeholder="Upload Speed"
+                  />
+                  <label>Maximum Download Speed</label>
+                  <input
+                    id="setDspeed"
+                    type="number"
+                    class="form-control"
+                    placeholder="Download Speed"
+                  />
+                  <label>Maximum Peer Connections</label>
+                  <input
+                    id="setPeers"
+                    type="number"
+                    class="form-control"
+                    placeholder="Maximum Peer Connections"
+                  />
+                </div>
                 <button class="btn btn-large btn-primary" disabled id="proceed">
                   Proceed
                 </button>

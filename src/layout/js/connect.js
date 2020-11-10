@@ -2,6 +2,7 @@ const electron = require("electron");
 const { ipcRenderer: ipc } = electron;
 const { dialog } = electron.remote;
 const fs = require("fs");
+const { parse } = require("path");
 let filePath, folderPath;
 try {
   var setupConfig = JSON.parse(fs.readFileSync("/tmp/setup.json", "utf8"));
@@ -90,7 +91,10 @@ document.querySelector("#makeLocation").addEventListener("click", () => {
     });
 });
 document.getElementById("proceed").addEventListener("click", () => {
-  ipc.send("start", filePath, folderPath);
+  let uspeed = parseInt(document.getElementById("setUspeed").value);
+  let dspeed = parseInt(document.getElementById("setDspeed").value);
+  let maxConnections = parseInt(document.getElementById("setPeers").value);
+  ipc.send("start", filePath, folderPath, uspeed, dspeed, maxConnections);
   toggle("play");
 });
 document.getElementById("proceed-make").addEventListener("click", () => {
@@ -114,6 +118,7 @@ ipc.on("torrent-info", (evt, info) => {
 });
 
 ipc.on("progress", (evt, data) => {
+  console.log("progress", data);
   document.getElementById("d-size").innerText = data;
   const size = parseInt(document.getElementById("t-size").innerText);
   document.getElementById("t-percent").innerText =
