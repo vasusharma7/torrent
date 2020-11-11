@@ -36,10 +36,6 @@
             <span class="icon icon-download icon-text"></span>
             Download Torrent
           </button>
-          <button class="btn btn-default" onClick="toggle('play')" disabled>
-            <span class="icon icon-play icon-text"></span>
-            Ongoing Torrent
-          </button>
           <button class="btn btn-default pull-right">
             <span class="icon icon-info icon-text"></span>Info
           </button>
@@ -98,7 +94,7 @@
         <div
           id="make_torrent"
           class="hidden d-flex justify-content-center"
-          style="width: 100%; background-color: #bbb"
+          style="width: 100%; background-color: #bbb; height: 125vh"
         >
           <div class="d-flex" style="padding: 10px">
             <div class="d-flex flex-column">
@@ -342,7 +338,7 @@
             <div class="pane pane-one-fourth sidebar" style="width: 30%">
               <div class="tab-group">
                 <div class="tab-item active" onClick="change(this,'tab-1')">
-                  Matadata
+                  Metadata
                 </div>
                 <div class="tab-item" onClick="change(this,'tab-2')">Files</div>
                 <div class="tab-item" onClick="change(this,'tab-3')">

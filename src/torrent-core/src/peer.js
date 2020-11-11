@@ -41,7 +41,9 @@ class Peer extends Torrent {
       if (this.track.lastSpeed == this.track.speed && this.speed != 0) {
         Torrent.prototype.limitDSpeed = false;
         this.track.speed = 0;
-        this.showSpeed();
+        try {
+          this.showSpeed();
+        } catch {}
       }
     }, 10000);
 

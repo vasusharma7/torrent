@@ -5,7 +5,6 @@ const Seeder = require("./seed");
 const { Peer } = require("./peer");
 const { Torrent, initTorrent } = require("./torrent");
 const { exec } = require("../ssh-tunnel/shell");
-const { electron } = require("process");
 
 // const file = process.argv[2];
 // const dest = process.argv[3];
@@ -13,7 +12,6 @@ const { electron } = require("process");
 // const torrentUtils = require("./src/torrent-file-utils");
 // const axios = require("axios");
 function connect(index) {
-  console.log("heloo ther");
   exec(global.config.ssh[index], function (err) {
     if (err) {
       console.log(err);
@@ -25,6 +23,7 @@ function connect(index) {
       );
   });
 }
+
 module.exports.startTorrent = (
   file,
   dest,
@@ -36,12 +35,7 @@ module.exports.startTorrent = (
     electron = false,
   }
 ) => {
-  if (global.config.info) console.log("Starting SSH-Tunnel...");
-  exec(global.config.activate, function (err) {
-    if (global.config.info)
-      console.log("[Proxy Tunnel]: Establishing Connection..");
-    if (err) console.log(err);
-  });
+  if (global.config.info) console.log("[Proxy Tunnel]: Starting SSH-Tunnel...");
   connect(0);
   if (!file) {
     if (global.config.debug)
@@ -94,8 +88,8 @@ module.exports.startTorrent = (
     if (global.config.debug)
       console.log(Torrent.prototype.connectedPeers.length, allPeers.length);
   };
-  // parseCallback([{ ip: "127.0.0.1", port: "6777" }]);
-  // parseCallback([{ ip: "18.225.11.191", port: "6777" }]);
+  // parseCallback([{ ip: "127.0.0.1", port: "6887" }]);
+  // parseCallback([{ ip: "18.225.11.191", port: "6887" }]);
 };
 //---------------------------------------------------HTTP TRACKER-------------------------------------
 

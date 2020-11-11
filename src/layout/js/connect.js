@@ -4,19 +4,19 @@ const { dialog } = electron.remote;
 const fs = require("fs");
 const { parse } = require("path");
 let filePath, folderPath;
-try {
-  var setupConfig = JSON.parse(fs.readFileSync("/tmp/setup.json", "utf8"));
-  console.log(setupConfig);
-  if (setupConfig) {
-    filePath = setupConfig.filePath;
-    folderPath = setupConfig.folderPath;
-  }
-  if (filePath && folderPath) {
-    document.getElementById("proceed").disabled = false;
-  }
-} catch (err) {
-  console.log(err);
-}
+// try {
+//   var setupConfig = JSON.parse(fs.readFileSync("/tmp/setup.json", "utf8"));
+//   console.log(setupConfig);
+//   if (setupConfig) {
+//     filePath = setupConfig.filePath;
+//     folderPath = setupConfig.folderPath;
+//   }
+//   if (filePath && folderPath) {
+//     document.getElementById("proceed").disabled = false;
+//   }
+// } catch (err) {
+//   console.log(err);
+// }
 document.querySelector("#fileLocation").addEventListener("click", () => {
   dialog
     .showOpenDialog({
