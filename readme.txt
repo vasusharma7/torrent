@@ -5,9 +5,9 @@ _____________VS Torrent_______________
 
 ------------Requirements------------
 
-1. npm v6 (pref 6.4.1)
-2. NodeJS v12 (pref 12.8)
-
+1. npm v6 (pref 6.4.1) (sudo apt update && apt install npm)
+2. NodeJS v12 (pref 12.8) (sudo apt install nodejs)
+3. Electron JS  [installed globally (npm i -g electron)]
 ----------------Steps to run the code----------
 (Can be run in GUI or CLI - either of D or E step to be done)
 
