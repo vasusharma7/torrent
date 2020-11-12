@@ -176,13 +176,9 @@ const parseBitfield = (bitfield) => {
     // if(global.config.debug)console.log(temp);
     parsed.push(temp);
   }
-  // for (let i = 0; i < bitfield.length; i++) {
-  //   parsed.push(bitfield.readUInt8(i).toString(2));
-  // }
+
   parsed = parsed.join("");
-  // if(global.config.debug)console.log("PARSED", parsed.length, parsed, bitfield.length, bitfield);
-  // if(global.config.debug)console.log(parsed);
-  // if(global.config.debug)console.log(bitfield);
+
   return parsed;
 };
 const parseResponse = (data, torrent) => {

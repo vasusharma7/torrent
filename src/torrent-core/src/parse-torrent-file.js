@@ -25,16 +25,14 @@ module.exports.init = (filename, dest) => {
   if (global.config.debug)
     console.log("Announce: ", torrent.announce.toString("utf8"));
   let files = [];
-  // if(global.config.debug)console.log(torrent.info.files);
-  // process.exit();
+
   if (torrent.info.files) {
     const savePath = path.join(dest, torrent.info.name.toString("utf8"));
-    //if(global.config.debug)console.log("path", path);
+
     if (!fs.existsSync(savePath)) {
       fs.mkdirSync(savePath);
     }
     for (let file of torrent.info.files) {
-      // if(global.config.debug)console.log(file);
       const name = file.path.toString("utf8");
       if (!fs.existsSync(name)) {
         let tempPath = name.replace(/,/g, "/").split("/");
@@ -43,20 +41,12 @@ module.exports.init = (filename, dest) => {
           torrent.info.name.toString("utf8"),
           tempPath.slice(0, tempPath.length - 1).join("/")
         );
-        // let rootPath = `${process.cwd()}${root}${
-        //   torrent.info.name
-        // }/${tempPath.slice(0, tempPath.length - 1).join("/")}`;
 
         let filePath = path.join(
           savePath,
           torrent.info.name.toString("utf8"),
           tempPath.join("/")
         );
-
-        // `${process.cwd()}${root}${
-        //   torrent.info.name
-        // }/${tempPath.join("/")}`;
-        // let path = `${folderPath}/${name}`;
 
         shell.mkdir("-p", rootPath);
         let fd = fs.openSync(filePath, "w+");
@@ -70,10 +60,7 @@ module.exports.init = (filename, dest) => {
     files.push({ path: path, size: torrent.info.length, fd: fd });
     size += torrent.info.length;
   }
-  // if(global.config.debug)console.log(files);
-  // const peiceLen = torrent.info.length
-  //   ? torrent.info.length
-  //   : torrent.info["piece length"];
+
   const peiceLen = torrent.info["piece length"];
   let pieces = [];
   const pieceHash = torrent.info.pieces;
@@ -111,24 +98,6 @@ module.exports.init = (filename, dest) => {
   }
   return { torrent: torrent, pieces: pieces, pieceLen: peiceLen, files: files };
 };
-
-// const manipulateState = (torrent) => {
-//   const statePath = path.join(
-//     path.dirname(require.main.filename),
-//     `.${Torrent.prototype.name}.json`
-//   );
-//   const file = fs.openSync(statePath, "a+");
-
-//   let stateInfo = {};
-//   try {
-//     stateInfo = JSON.parse(fs.readFileSync(statePath, "utf8"));
-//   } catch (err) {
-//     if (global.config.debug) console.log("A new torrent is added");
-//   }
-//   stateInfo[torrent.info.name.toString("utf8")] = { status: "downloading" };
-//   fs.writeFileSync(statePath, JSON.stringify(stateInfo));
-//   fs.closeSync(file);
-// };
 
 module.exports.parse = async (torrent, callback) => {
   let urls = [];
@@ -198,10 +167,4 @@ module.exports.parse = async (torrent, callback) => {
     }, ((Torrent.prototype.contactCount % Torrent.prototype.urls.length) + 1) * 2000);
     Torrent.prototype.contactCount += 1;
   }, 5000);
-  // ((Torrent.prototype.contactCount % Torrent.prototype.urls.length) + 1) * 2000
-
-  // urls.forEach((url) => {
-  //   setTimeout(() => {}, track * 10000);
-  //   track++;
-  // });
 };

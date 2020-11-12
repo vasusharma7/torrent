@@ -1,11 +1,9 @@
 const dgram = require("dgram");
 const Buffer = require("buffer").Buffer;
 const urlParse = require("url").parse;
-const crypto = require("crypto"); // 1
+const crypto = require("crypto");
 const torrentUtils = require("./torrent-file-utils");
 const port = global.config.myPort;
-
-// const port = 0x1AE7
 
 function respType(resp) {
   const action = resp.readUInt32BE(0);
@@ -15,20 +13,16 @@ function respType(resp) {
 
 module.exports.getPeers = (torrent, url, callback) => {
   const socket = dgram.createSocket("udp4");
-  // if (global.config.debug) console.log(url);
-  // const url = torrent.announce.toString("utf8");
-  // const url = torrent["announce-list"][0].toString("utf8");
 
   udpSend(socket, buildConnReq(), url);
   socket.on("error", (err) => {
     if (global.config.debug) console.log(err);
   });
   socket.on("message", (response) => {
-    // if(global.config.debug)console.log("response", response)
     switch (respType(response)) {
       case "connect":
         const connResp = parseConnResp(response);
-        // if(global.config.debug)console.log("connection response", connResp);
+
         const announceReq = buildAnnounceReq(torrent, connResp.connectionId);
         udpSend(socket, announceReq, url);
         break;
@@ -43,8 +37,7 @@ module.exports.getPeers = (torrent, url, callback) => {
 
 function udpSend(socket, message, rawUrl, callback = () => {}) {
   const url = urlParse(rawUrl);
-  // if(global.config.debug)console.log(url);
-  // const port = url.port ? url.port : 80
+
   let port = url.port ? url.port : 80;
   socket.send(message, 0, message.length, port, url.hostname, (err) => {});
 }
@@ -55,7 +48,7 @@ function buildConnReq() {
   // connection id
   //writing big endian unsigned int - 8 bytes
 
-  //magic number 0x417271001980
+  //fixed number 0x417271001980
   buf.writeUInt32BE(0x417, 0); // 3
   buf.writeUInt32BE(0x27101980, 4);
 
@@ -112,8 +105,7 @@ function buildAnnounceReq(torrent, connId) {
   buf.writeUInt32BE(0, 80);
 
   //ip address
-  //set to zero because I want tracker to use the IP address of sender of this UDP packet i.e. ultimately my IP
-
+  //setting it to the ip I want to advertise to peers - my external IP of AWS instance- publically available
   let ip = global.config.ip;
 
   ip = ip.split(".");

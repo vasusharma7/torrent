@@ -8,9 +8,6 @@ const _colors = require("colors");
 const ansiEscapes = require("ansi-escapes");
 const { prototype } = require("stream");
 const write = process.stdout.write.bind(process.stdout);
-//things to debug
-// queue size increasing
-// some discrepencies while new peers are added - bring in no piece situations
 
 class Torrent {
   constructor(pieces, pieceLen, torrent) {
@@ -115,7 +112,6 @@ class Torrent {
     for (let peer of this.connectedPeers)
       if (!peer.state.choked) speed += peer.track.speed;
     if (speed > this.dspeed && this.dspeed != -1 && this.dspeed >= 10) {
-      // console.log("MAX SPEED REACHED", speed);
       let speedMap = [];
       this.connectedPeers.forEach((peer) => {
         if (peer.track.speed != 0 && peer.state.choked == false)
@@ -124,7 +120,6 @@ class Torrent {
       speedMap = speedMap.sort((a, b) => b.speed - a.speed);
       while (speed > this.dspeed) {
         if (speedMap.length > 1) {
-          // console.log("Limiting Speed");
           let ele = speedMap.pop();
           speed -= ele.speed;
           ele.peer.state.turtled = true;
@@ -299,11 +294,13 @@ class Torrent {
       Torrent.prototype.unChokedPeers = new Set(unChokedPeers);
     } catch {
       if (1 || global.config.debug) {
-        console.log("wierd ", Array.isArray(chokedPeers[chokeIndex]));
-        console.log("wierd _ ", targetChoked.info);
-        console.log("wierd ", Array.isArray(unChokedPeers[unChokeIndex]));
-        console.log("wierd _ ", targetUnChoked.info);
-        console.log("this is another blunder");
+        if (global.config.debug) {
+          console.log("wierd ", Array.isArray(chokedPeers[chokeIndex]));
+          console.log("wierd _ ", targetChoked.info);
+          console.log("wierd ", Array.isArray(unChokedPeers[unChokeIndex]));
+          console.log("wierd _ ", targetUnChoked.info);
+          console.log("this is another blunder");
+        }
       }
     }
   };
@@ -316,8 +313,8 @@ class Torrent {
     this.connectedPeers.forEach((peer) => {
       if (global.config.debug) console.log(peer.info.ip);
     });
-    // Torrent.prototype.top4I = setInterval(this.topFour, 10000);
-    // Torrent.prototype.optChI = setInterval(this.optimisticUnchoke, 30000);
+    Torrent.prototype.top4I = setInterval(this.topFour, 10000);
+    Torrent.prototype.optChI = setInterval(this.optimisticUnchoke, 30000);
   };
 
   closeConnections = () => {
@@ -338,7 +335,7 @@ class Torrent {
     Torrent.prototype.isComplete = true;
     clearInterval(Torrent.prototype.top4I);
     clearInterval(Torrent.prototype.optChI);
-    // startSeed();
+
     if (global.config.debug) console.log("I am a seeder now :)");
   };
 
@@ -351,10 +348,7 @@ class Torrent {
     }
     const current = [];
     this.connectedPeers.forEach((peer) => {
-      // if (peer.choked === false) {
       current.push(peer.current);
-      // if(global.config.debug)console.log("current", peer.info.ip, peer.current);
-      // }
     });
     let downloaded = [];
     let noPiece = [];
@@ -531,7 +525,6 @@ class Torrent {
       block: contents.slice(begin, begin + length),
     };
     peer.socket.write(messages.piece(payload));
-    //testing almost done
   };
 
   saveState = () => {

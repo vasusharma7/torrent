@@ -94,8 +94,6 @@ class Seeder {
           );
       });
     });
-
-    // var no_of_connections =  server.getConnections(); // sychronous version
   }
 }
 

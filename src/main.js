@@ -47,7 +47,7 @@ app.on("ready", async (_) => {
   });
   // mainWindow.removeMenu();
   mainWindow.loadURL(`file://${__dirname}/layout/index.html`);
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
   tray = new Tray(path.join(__dirname, "assets/min.png"));
   const contextMenu = Menu.buildFromTemplate([
     {

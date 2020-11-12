@@ -46,19 +46,6 @@ class Peer extends Torrent {
         } catch {}
       }
     }, 10000);
-
-    // if (this.downloaded.size === 0) {
-    //   let sendHavesI = setInterval(() => {
-    //     if (this.downloaded.size !== 0) {
-    //       this.servePiece(this, {
-    //         index: [...this.downloaded][0],
-    //         begin: 0,
-    //         length: 8192,
-    //       });
-    //       // clearInterval(sendHavesI);
-    //     }
-    //   }, 2000);
-    // }
   }
 
   msgLen = (data) => {
@@ -79,7 +66,6 @@ class Peer extends Torrent {
       );
 
       this.socket.on("connect", () => {
-        // setTimeout(this.sendHave, 4000);
         this.socket.write(messages.handshake(this.torrent));
       });
     } else {
@@ -143,12 +129,11 @@ class Peer extends Torrent {
             console.log("I am already a client yaar", data);
         }
         this.buffer = Buffer.concat([this.buffer, data]);
-        // if(global.config.debug)console.log(this.buffer.length)
+
         while (
           this.buffer.length > 4 &&
           this.buffer.length >= this.msgLen(this.buffer)
         ) {
-          // if(global.config.debug)console.log("getting buffer",this.buffer.length,this.msgLen(this.buffer));
           this.parseData(this.buffer.slice(0, this.msgLen(this.buffer)));
           this.buffer = this.buffer.slice(this.msgLen(this.buffer));
           if (!this.handshake) {
@@ -250,14 +235,11 @@ class Peer extends Torrent {
     // if(global.config.debug)console.log("speed", this.track.speed);
   };
   handleHandshake = (parsed) => {
-    // if(global.config.debug)console.log("handshake", this.info.ip);
-    // this.socket.write(messages.unChoke());
     if (parsed) {
       if (this.client) {
         let is_kernel_buffer_full = this.socket.write(
           messages.handshake(this.torrent)
         );
-        this.socket.write(messages.interested());
         this.handleInterested();
       }
       if (!Torrent.prototype.isComplete) {
@@ -327,16 +309,14 @@ class Peer extends Torrent {
         "xxxxxxxxxxxxxxxxxxxxxxxxx-----------------SOMEONE IS INTERESTED----------------xxxxxxxxxxxxxxxxxxxxxxxxxxxx",
         parsed
       );
-    // if (this.state.amChoking === true) {
+
     this.socket.write(messages.unChoke());
     this.state.amChoking = false;
-    // }
 
     //send bitfield to the peer and wait for the request
     this.sendHavesI = setInterval(() => {
       if (this.downloaded.size !== 0) {
         this.sendHaves(this);
-        // setTimeout(() => clearInterval(sendHavesI), 5000);
       }
     }, 10000);
     if (this.downloaded.size !== 0) {
@@ -389,8 +369,6 @@ class Peer extends Torrent {
       if (err) {
         if (global.config.debug) console.log(err);
       } else {
-        // if(global.config.debug)console.log(written, buffer)
-        // this.downloaded.add(parsed.payload.index);
         if (global.config.debug)
           console.log(
             "saved",
@@ -502,8 +480,6 @@ class Peer extends Torrent {
     ) {
       if (global.config.debug) console.log("Download Complete !!");
 
-      // clearInterval(Torrent.prototype.top4I);
-      // clearInterval(Torrent.prototype.optChI);
       this.closeConnections();
       return;
     }
@@ -522,7 +498,7 @@ class Peer extends Torrent {
             this.downloaded.size,
             this.pieces.length
           );
-        //to be tested - endgame protocol
+
         for (let i = 0; i < this.pieces.length; i++) {
           if (this.downloaded.has(i) == false) {
             this.queue.push({ index: i, count: 1 });
@@ -538,7 +514,7 @@ class Peer extends Torrent {
         if (!this.queue.isEmpty()) target = this.queue.pop();
         else {
           if (global.config.debug) console.log("queue is empty");
-          // askForPeers();
+
           return;
         }
         if (global.config.debug)

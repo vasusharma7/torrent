@@ -132,14 +132,11 @@ const makeTorrent = async (
   });
 };
 
-// let walkPath = "../Clementine 1.3.1 Source";
 let walkPath = "./Too Much and Never Enough - Mary Trump.epub";
 let trackerURLS = [
   "udp://public.popcorn-tracker.org:6969/announce",
   "udp://public.popcorn-tracker.org:6969/announce",
   "http://bt2.careland.com.cn:6969/announce",
 ];
-
-// makeTorrent(walkPath, trackerURLS, 0);
 
 module.exports = { makeTorrent };
