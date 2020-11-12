@@ -1,5 +1,6 @@
 _____________VS Torrent_______________
 
+
 (Also implemented the functionality of STUN server to get over NAT world using TCP port forwarding and ssh tunneling)
 (information at the last of this file)
 
@@ -127,3 +128,5 @@ So, conceptually seeing, node-js has C++ code written for running its asynchrono
 So, we acheive multi threading without even coding for that. But that is true only for asynchronous tasks like API fetching, Network Oriented Tasks, file system based tasks. Some of the CPU intensive tasks such as calculating hashes in crypto library or image processing takes time because they are synchronous in nature. Node has a solution for that too. Node JS has 4 threads in its thread pool which means that it can actually run 4 synchronous tasks parallely without performance loss but slows down if more than 4 are run together. 
 Proportion of C++ code is 1/3 in node , rest is itself JS.
 
+
+Also on https://github.com/vasusharma7/torrent
