@@ -29,7 +29,13 @@ const walk = function (dir, files, level, type, done) {
             next();
           });
         } else {
-          const current = fs.openSync(file, "r+");
+          let current = "";
+          try {
+            current = fs.openSync(file, "r+");
+          } catch (err) {
+            console.log(err.message);
+            process.exit();
+          }
           // console.log(file.substring(metaData.index + 1));
           files.push({
             path: file.substring(file.lastIndexOf("/")),

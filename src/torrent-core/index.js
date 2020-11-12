@@ -9,6 +9,7 @@ const { version } = require("./package.json");
 const process = require("process");
 const { off } = require("process");
 const { maxConnections } = require("./src/config.js");
+const { cat } = require("shelljs");
 const parser = new ArgumentParser({
   description: "VS Torrent",
 });
@@ -228,15 +229,16 @@ const run = async () => {
     }
     if (args.download) {
       startTorrent(args.download, args.location, {
-        maxConnections: parseInt(args.connections),
-        uspeed: parseInt(args.upload_speed),
-        dspeed: parseInt(args.download_speed),
+        maxConnections: Math.abs(parseInt(args.connections)),
+        uspeed: Math.abs(parseInt(args.upload_speed)),
+        dspeed: Math.abs(parseInt(args.download_speed)),
       });
     } else if (args.make) {
       if (!(args.trackerURLs && args.type && args.location && args.name)) {
         console.log("Please provide all options, use -h for help");
         return;
       }
+
       makeTorrent(
         args.make,
         args.trackerURLs.split(","),

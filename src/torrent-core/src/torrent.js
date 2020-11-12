@@ -57,7 +57,7 @@ class Torrent {
     if (global.config.progress) {
       this.addBar();
       write(ansiEscapes.cursorRestorePosition);
-      write(ansiEscapes.cursorSavePosition + ansiEscapes.cursorTo(0, 15));
+      write(ansiEscapes.cursorSavePosition + ansiEscapes.cursorTo(0, 20));
       const size = (
         this.files.map((file) => file.size).reduce((a, b) => a + b) / 1024
       ).toFixed(2);

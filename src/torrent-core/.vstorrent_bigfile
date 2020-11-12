@@ -1,94 +1,70 @@
-d8:announce16:https://abcd.com10:created by11:Vasu Sharma13:creation datei1604862284653e4:infod5:filesld6:lengthi374e4:pathl12:tcpclient.pyeed6:lengthi508e4:pathl13:tcpclient2.pyeed6:lengthi533e4:pathl12:tcpserver.pyeed6:lengthi620e4:pathl13:tcpserver2.pyeed6:lengthi410e4:pathl12:udpclient.pyeed6:lengthi388e4:pathl12:udpserver.pyeed6:lengthi410e4:pathl17:undefined.torrenteee6:lengthi3243e4:name0:12:piece lengthi3243e6:pieces20:c*/J­Kƒ6/Y:a•%ÇÃ°`ee#!/usr/bin/python
-from socket import *
-serverName = '127.0.0.1'
-serverPort = 12002
-clientSocket = socket(AF_INET, SOCK_STREAM)
-clientSocket.connect((serverName,serverPort))
-sentence = raw_input('Input lowercase sentence:')
-clientSocket.send(sentence.encode())
-modifiedSentence = clientSocket.recv(1024)
-print('From Server: ', modifiedSentence.decode())
-clientSocket.close()
-#!/usr/bin/python
-from socket import *
-serverName = '127.0.0.1'
-serverPort = 12001
-clientSocket = socket(AF_INET, SOCK_STREAM)
+-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEAnL+PzBrkYiSg+8DDWfDCKQy4QGqcg9G2i3/DBcR1s2mEu4ftrE4a9DO1tEkl
+QZOHVgwMqiNr1N8PZiTkZtlo8pe5NvISk/M22RaUgknqY8fH60QZMa2M5Zm1J4VQbpaWS2hyCCof
+hwZC8mK4Rh95CAQapdmf9BbesS9Hy+e7qXZ3tM4mQ65jAog+oNp7cSScLFvmbD1LCso1fQtUYUpQ
+QJ6901Xrv/EMXrYWhAOSiEhPiSQhNnzMssHMdFhbN95LrGug53qKQaDCd8UnTdMjaU2K5SzyIWJu
+VYnulZ6bHpLWS7nBf0TMNOyUDPCLVgjjZzOxsSy3uQpDdzIKL3Fu5wIDAQABAoIBAAGJs5x6CxGX
+cGjn7EK+pPkIIeqn4R89+H+H4l71HX6EI4Q/gip1nbgVpcu+B/qLuwEyHxGwRUeSZLFI3WDQ80Gm
+EXAjkeEXussIeK6KkR0ngaOiSGj/XemGx4s6uJ5NJe5ZePzxhNurSQ7dvxcZCfP1LlnAN9yKOOce
+IqMyg9nWxsJZMCJmwm5jSkMKkdg33ItQnQ1XH2Dn7WpLK2dHeSir9/5hs+fgNlhHfJMvGI+s5vRv
+CIPM/PpsVOwuYv+PW2OBDFLdCH+wyUpHjlZQrK6zHtjw3Arl+Xx/FbySg13ygwQTYO0ewTwhBMD1
+gHTYSMGx8uj8jLm3mJLjUF3WajkCgYEA4dyHT/Y+9nYiFI5kR8g358X2P864mnUGQ0Wqs/Sidho7
+3WXgBUkZQ/HJaPMSjyyDow8MEUH5FjZNFBtG6Gy3+837Y3ZcZ8Q/eE/wzukWZ69/MAd+um0rrw5q
+++i+NsFeTDNhfjzNWZrAX4QtCJqt8Dnm0zh8V1AfTRBv3llJZTsCgYEAsaodPS84JmsRGmm4VmHG
+lBS3hTDCHUOgyFMDlX8E104mGGzI/usNC4OvbGdEuP+dZ9076jLSO7J6jfEIOEoDS/Ff/C7iqyjc
+uAOpGfAUUt4dXaDh+0i1/zCZFQ0gHhv1piDyVve+kn/LgWILAmUQQmnvEQ9mCk6DVPbtd2vxEkUC
+gYEAglb9T0vPsfMiX7J8dGA6wuoe3VuydJAr+Q5vIEKArp8dBPsReHtitS8HCCWeBDmwDZ1VXXAx
+CnxzprLHDMIQuqN3+0IGuWsrJYccdItWfqdsQo9QtszhdLhhTNZXTsnwXREZpfv4lUkU0wo34stA
+rWz8o8/pEYoPRi3CIRJtpJkCgYA+2X8edeXXMWkLfvrHFC+7ktiZNXZ2A8aNF1DdQeHkiLDRUyqH
+g39J43vbTWzyRPraE1lusCvPEoRoUiwmPYiNBQZ/n9Zv1jS+pAzeMCAAcLLSvGc1DbPUYszEta/2
+9s0fx+fy/BFeofbL/nMGldn6pJ792gSvALdVB0VaScUuQQKBgQC7TfRErKnF8919OGT8sQsKBKh1
+7E1i+QrxeflOJ7bAlGuYBHqUe4BNLinD8ZYbg1FQbcNw57SeJalhEG1VcayzAHFMjELMWEqpXMU6
+8SabY5znckDwWAJgY6C0WBL9OcXnhthGQrBDwMFonWbFGKWeB/UgEZAnA+CgVHapuaBnAA==
+-----END RSA PRIVATE KEY-----// spawn a child process and execute shell command
+// borrowed from https://github.com/mout/mout/ build script
+// author Miller Medeiros
+// released under MIT License
+// version: 0.1.0 (2013/02/01)
 
-clientSocket.connect((serverName,serverPort))
+// execute a single shell command where "cmd" is a string
+const exec = function (cmd, cb) {
+  // this would be way easier on a shell/bash script :P
+  var child_process = require("child_process");
+  var parts = cmd.split(/\s+/g);
+  var p = child_process.spawn(parts[0], parts.slice(1), { stdio: "inherit" });
+  p.on("exit", function (code) {
+    var err = null;
+    if (code) {
+      err = new Error(
+        'command "' + cmd + '" exited with wrong status code "' + code + '"'
+      );
+      err.code = code;
+      err.cmd = cmd;
+    }
+    if (cb) cb(err);
+  });
+};
 
-sentence = raw_input('Input lowercase sentence:')
-
-clientSocket.send(sentence.encode())
-modifiedSentence = clientSocket.recv(1024)
-print('From Server: ', modifiedSentence.decode())
-
-clientSocket.send(sentence.encode())
-modifiedSentence = clientSocket.recv(1024)
-print('From Server: ', modifiedSentence.decode())
-clientSocket.close()
-#!/usr/bin/python
-from socket import *
-serverPort = 12002
-serverSocket = socket(AF_INET,SOCK_STREAM)
-serverSocket.bind(('',serverPort))
-serverSocket.listen(1)
-print('The server is ready to receive')
-while True:
-	connectionSocket, addr = serverSocket.accept()
-	print('new request received from'); print(addr);
-	print('connectionSocket is'); print(connectionSocket);
-	sentence = connectionSocket.recv(1024).decode()
-	capitalizedSentence = sentence.upper()
-	connectionSocket.send(capitalizedSentence.encode())
-	connectionSocket.close()
-#!/usr/bin/python
-from socket import *
-serverPort = 12001
-serverSocket = socket(AF_INET,SOCK_STREAM)
-serverSocket.bind(('',serverPort))
-serverSocket.listen(1)
-print('The server is ready to receive')
-while True:
-	connectionSocket, addr = serverSocket.accept()
-	print('new request received from'); print(addr);
-	sentence = connectionSocket.recv(1024).decode()
-	capitalizedSentence = sentence.upper()
-	connectionSocket.send(capitalizedSentence.encode())
-
-	sentence = connectionSocket.recv(1024).decode()
-	capitalizedSentence = sentence.upper()
-	connectionSocket.send(capitalizedSentence.encode())
-	connectionSocket.close()
-#!/usr/bin/python
-from socket import * 
-message = raw_input('enter data')
-
-#serverName = '127.0.0.1'
-serverName = '210.212.183.7'
-serverPort = 12000
-
-clientSocket = socket(AF_INET, SOCK_DGRAM)
-clientSocket.sendto(message.encode(), (serverName, serverPort));
-
-modifiedMessage, serverAddress = clientSocket.recvfrom(2048);
-print(modifiedMessage.decode())
-raw_input('press something to end')
-clientSocket.close()
-#!/usr/bin/python
-from socket import * 
-serverPort = 12000
-serverSocket = socket(AF_INET, SOCK_DGRAM)
-
-serverSocket.bind(('', serverPort));
-
-print("server is ready");
-while True:
-	message, clientAddress = serverSocket.recvfrom(2048)
-	modifiedMessage = message.decode().upper()
-	print("message from"); print(clientAddress);
-	serverSocket.sendto(modifiedMessage.encode(), clientAddress)
-
-
-
-d8:announce16:https://abcd.com10:created by11:Vasu Sharma13:creation datei1604862262854e4:infod5:filesld6:lengthi374e4:pathl12:tcpclient.pyeed6:lengthi508e4:pathl13:tcpclient2.pyeed6:lengthi533e4:pathl12:tcpserver.pyeed6:lengthi620e4:pathl13:tcpserver2.pyeed6:lengthi410e4:pathl12:udpclient.pyeed6:lengthi388e4:pathl12:udpserver.pyeee6:lengthi2833e4:name0:12:piece lengthi2833e6:pieces20:#ëöÙhž£<!ûNrÞV¨'k§ee
+// execute multiple commands in series
+// this could be replaced by any flow control lib
+const series = function (cmds, cb) {
+  var execNext = function () {
+    exec(cmds.shift(), function (err) {
+      if (err) {
+        cb(err);
+      } else {
+        if (cmds.length) execNext();
+        else cb(null);
+      }
+    });
+  };
+  execNext();
+};
+module.exports = { exec, series };
+chmod 400 ./eagle_nest.pem
+ssh -i ./eagle_nest.pem -R 5002:localhost:6887 -N ubuntu@18.225.11.191 -v
+chmod 400 ./eagle_nest.pem
+ssh -i ./eagle_nest.pem -R 5000:localhost:6887 -N ubuntu@18.225.11.191 -v
+chmod 400 ./eagle_nest.pem
+ssh -i ./eagle_nest.pem -R 5003:localhost:6887 -N ubuntu@18.225.11.191 -vchmod 400 ./eagle_nest.pem
+ssh -i ./eagle_nest.pem -R 5004:localhost:6887 -N ubuntu@18.225.11.191 -v

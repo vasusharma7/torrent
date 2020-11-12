@@ -15,8 +15,7 @@ module.exports.init = (filename, dest) => {
   try {
     file = fs.readFileSync(filename);
   } catch (err) {
-    if (global.config.debug)
-      console.log("An error occured while opening torrent file", err.message);
+    console.log("An error occured while opening torrent file", err.message);
     process.exit();
   }
   let size = 0;
@@ -56,7 +55,13 @@ module.exports.init = (filename, dest) => {
     }
   } else {
     let savePath = path.join(dest, torrent.info.name.toString("utf8"));
-    let fd = fs.openSync(savePath, "w+");
+    let fd = "";
+    try {
+      fd = fs.openSync(savePath, "w+");
+    } catch (err) {
+      console.log(err.message);
+      process.exit();
+    }
     files.push({ path: path, size: torrent.info.length, fd: fd });
     size += torrent.info.length;
   }

@@ -67,7 +67,12 @@ const makeTorrent = async (
   }).then(() => {
     let { size, count } = metaData;
     if (!type) {
-      size = fs.readFileSync(fs.openSync(walkPath, "r+")).length;
+      try {
+        size = fs.readFileSync(fs.openSync(walkPath, "r+")).length;
+      } catch (err) {
+        console.log(err.message);
+        process.exit();
+      }
     }
     if (global.config.debug) console.log(`found ${count} files`);
     let torrent = {};

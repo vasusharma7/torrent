@@ -4,7 +4,6 @@ const torrentFile = require("./parse-torrent-file");
 const Seeder = require("./seed");
 const { Peer } = require("./peer");
 const { Torrent, initTorrent } = require("./torrent");
-const { exec } = require("../ssh-tunnel/shell");
 
 module.exports.startTorrent = (
   file,
@@ -17,8 +16,6 @@ module.exports.startTorrent = (
     electron = false,
   }
 ) => {
-  if (global.config.info) console.log("[Proxy Tunnel]: Starting SSH-Tunnel...");
-
   if (!file) {
     if (global.config.debug)
       console.log("Please provide a torrent file in the arguement");

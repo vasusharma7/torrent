@@ -91,13 +91,13 @@ E. Run CLI
 
             -n NAME, --name  Name of torrent file to be created
             -m MAKE, --make  Path to File or Folder to make Torrent
-            (-t TYPE, --type  Type of Torrent To Make - Single File (0) | Folder (1))
+            -t TYPE, --type  Type of Torrent To Make - Single File - use -t 0 | Folder - use -t 1
             -l LOCATION, --location 
                                     Path to donwload Torrent or save newly created file
             -w TRACKERURLS, --trackerURLs 
                                     Tracker URLs for making torrent files - comma separated
 
-            >node index.js -m <path_to_torrent_file_or_folder_to_make_torrent> -l <location_to_save_torrent_file> -n <name_of_torrent_file_to_create> -w <tracker_urls_separated_by_comma>
+            >node index.js -m <path_to_torrent_file_or_folder_to_make_torrent> -l <location_to_save_torrent_file> -n <name_of_torrent_file_to_create> -w <tracker_urls_separated_by_comma> -t <0 or 1>
 
 
 **Additional Feature**
