@@ -1,6 +1,6 @@
 const path = require("path");
 module.exports = global.config = {
-  debug: false,
+  debug: true,
   port: 6887,
   hostPort: 6887,
   hostname: "0.0.0.0",

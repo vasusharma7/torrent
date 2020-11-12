@@ -257,7 +257,8 @@ class Peer extends Torrent {
         let is_kernel_buffer_full = this.socket.write(
           messages.handshake(this.torrent)
         );
-        // checkKernelBuffer(is_kernel_buffer_full);
+        this.socket.write(messages.interested());
+        this.handleInterested();
       }
       if (!Torrent.prototype.isComplete) {
         this.socket.write(messages.interested());
@@ -326,10 +327,10 @@ class Peer extends Torrent {
         "xxxxxxxxxxxxxxxxxxxxxxxxx-----------------SOMEONE IS INTERESTED----------------xxxxxxxxxxxxxxxxxxxxxxxxxxxx",
         parsed
       );
-    if (this.state.amChoking === true) {
-      this.socket.write(messages.unChoke());
-      this.state.amChoking = false;
-    }
+    // if (this.state.amChoking === true) {
+    this.socket.write(messages.unChoke());
+    this.state.amChoking = false;
+    // }
 
     //send bitfield to the peer and wait for the request
     this.sendHavesI = setInterval(() => {

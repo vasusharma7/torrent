@@ -33,10 +33,9 @@ document.querySelector("#fileLocation").addEventListener("click", () => {
         document.getElementById("file-chosen").innerText =
           "Torrent File:" + filePath;
         if (filePath && folderPath) {
-          let setupfile = fs.openSync("/tmp/setup.json", "w+");
-          const json = JSON.stringify({ filePath, folderPath });
-          fs.writeSync(setupfile, json);
           document.getElementById("proceed").disabled = false;
+        } else {
+          console.log(filePath, folderPath);
         }
       }
     });
@@ -52,10 +51,9 @@ document.querySelector("#folderLocation").addEventListener("click", () => {
       document.getElementById("folder-chosen").innerText =
         "Save Location:" + folderPath;
       if (filePath && folderPath) {
-        let setupfile = fs.openSync("/tmp/setup.json", "w+");
-        const json = JSON.stringify({ filePath, folderPath });
-        fs.writeSync(setupfile, json);
-        document.getElementById("proceed-make").disabled = false;
+        document.getElementById("proceed").disabled = false;
+      } else {
+        console.log(filePath, folderPath);
       }
     });
 });
@@ -88,8 +86,12 @@ document.querySelector("#makeLocation").addEventListener("click", () => {
       folderPath = resp.filePaths[0];
       document.getElementById("folder-make").innerText =
         "Destination:" + folderPath;
+      if (filePath && folderPath) {
+        document.getElementById("proceed-make").disabled = false;
+      }
     });
 });
+
 document.getElementById("proceed").addEventListener("click", () => {
   let uspeed = parseInt(document.getElementById("setUspeed").value);
   let dspeed = parseInt(document.getElementById("setDspeed").value);
@@ -136,8 +138,10 @@ ipc.on("d-speed", (evt, data) => {
 ipc.on("u-speed", (evt, data) => {
   document.getElementById("u-speed").innerText = data.toFixed(2);
 });
+
 ipc.on("t-unchoked", (evt, data) => {
-  document.getElementById("t-unchoked").innerText = data.length;
+  let max = parseInt(document.getElementById("t-peers").innerText);
+  document.getElementById("t-unchoked").innerText = Math.min(data.length, max);
 });
 
 ipc.on("t-peers", (evt, data) => {

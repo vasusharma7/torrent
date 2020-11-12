@@ -5,8 +5,7 @@
   "description": "Torrent client",
   "main": "src/main.js",
   "scripts": {
-    "start": "electron .",
-    "build": "rimraf VS-Torrent-* && electron-packager . --platform=win32 --arch=x64  --icon=bot"
+    "start": "electron ."
   },
   "keywords": [],
   "author": "",

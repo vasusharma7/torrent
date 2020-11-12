@@ -25,6 +25,7 @@ class Seeder {
     this.islistening = this.server.listening;
 
     if (this.islistening) {
+      if (global.config.info) console.log("[Info]: Server is listening...");
       if (global.config.debug) console.log("Server is listening");
       var address = self.server.address();
       var port = address.port;

@@ -36,7 +36,7 @@ module.exports.startTorrent = (
   }
 ) => {
   if (global.config.info) console.log("[Proxy Tunnel]: Starting SSH-Tunnel...");
-  connect(0);
+  // connect(0);
   if (!file) {
     if (global.config.debug)
       console.log("Please provide a torrent file in the arguement");
@@ -59,7 +59,7 @@ module.exports.startTorrent = (
   seeder.execute();
   initTorrent(files, pieces, uspeed, dspeed, maxConnections);
 
-  torrentFile.parse(torrent, (peers) => parseCallback(peers));
+  //torrentFile.parse(torrent, (peers) => parseCallback(peers));
   const parseCallback = (peers) => {
     const allPeers = [];
     if (Torrent.prototype.connectedPeers.length > maxConnections) {
@@ -88,8 +88,9 @@ module.exports.startTorrent = (
     if (global.config.debug)
       console.log(Torrent.prototype.connectedPeers.length, allPeers.length);
   };
-  // parseCallback([{ ip: "127.0.0.1", port: "6887" }]);
+  // parseCallback([{ ip: "40.80.81.76", port: "6887" }]);
   // parseCallback([{ ip: "18.225.11.191", port: "6887" }]);
+  parseCallback([{ ip: "210.212.183.7", port: "6885" }]);
 };
 //---------------------------------------------------HTTP TRACKER-------------------------------------
 

@@ -28,6 +28,7 @@ function move(width) {
     document.getElementById("progressBar").innerHTML =
       "Successfully Downloaded Torrent!";
   } else {
+    document.getElementById("progressBar").innerHTML = "Downloading...";
     elem.style.width = width + "%";
   }
 }

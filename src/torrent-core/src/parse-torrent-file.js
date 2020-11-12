@@ -141,12 +141,12 @@ module.exports.parse = async (torrent, callback) => {
       urls.push(...url.toString().split(","));
     });
   }
-  if (global.config.info) console.log(`[Info]: Contacting Trackers`);
-  if (Torrent.prototype.electron)
-    Torrent.prototype.transport(
-      "status",
-      `Contacting Trackers ( Found ${urls.length} trackers )`
+  if (global.config.info)
+    console.log(
+      `[Info]: Contacting Trackers ( Found ${urls.length} trackers )`
     );
+  if (Torrent.prototype.electron)
+    Torrent.prototype.transport("status", `Contacting Trackers `);
   if (Torrent.prototype.electron) {
     Torrent.prototype.transport("t-trackers", urls);
   }

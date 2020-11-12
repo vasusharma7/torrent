@@ -221,7 +221,7 @@ const run = async () => {
     }
   } else {
     const args = parser.parse_args();
-    console.log(args);
+    // console.log(args);
     if (!args.location) {
       console.log("Please provide location to save torrent, use -h for help");
       return;
