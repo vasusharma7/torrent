@@ -1,6 +1,12 @@
 <center><h1><b> VS Torrent </b></h1> </center>
 <center><h3><b> BitTorrent Cleint </b></h3> </center>
 
+**Refer readme.txt for project setup**
+
+<img src="screenshots/best.png"/>
+<hr/>
+
+
 <hr/>
 
 **Features**
