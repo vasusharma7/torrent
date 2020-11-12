@@ -3,7 +3,6 @@
 
 <hr/>
 
-**Refer readme.txt for project setup**
 
 <img src="screenshots/best.png"/>
 
@@ -38,6 +37,10 @@
 3. Electron JS - install globally (npm i -g electron)
 ----------------Steps to run the code----------
 (Can be run in GUI or CLI - either of D or E step to be done)
+
+**Also implemented the functionality of STUN server to get over NAT world using TCP port forwarding and ssh tunneling**
+*Take Key by mailing to vasusharma2017@outlook.com* for running seeding across NAT*
+
 
 **Open Terminal**
 
@@ -129,6 +132,8 @@ E. Run CLI
 
 
 **Additional Feature**
+
+
 Seeding also works from when the client is run locally - tested with seeding to Azure and AWS from local machine.
 Implemented SSH Port Tunneling to achive this, have to follow Step B above for this to work.
 Tried to replicate STUN Server kind of functionality
@@ -146,6 +151,7 @@ And I am giving my IP as 18.225.11.191 while contacting tracker so that others ,
 
 **Reason to choose Node JS over Python**
 
+
 1.Cross platform native GUI app development is quite easy in Electron - which is a JS Framework.
 
 2. Also,
@@ -156,4 +162,3 @@ So, we acheive multi threading without even coding for that. But that is true on
 Proportion of C++ code is 1/3 in node , rest is itself JS.
 
 
-Also on https://github.com/vasusharma7/torrent
