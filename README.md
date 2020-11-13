@@ -139,14 +139,13 @@ Implemented SSH Port Tunneling to achive this, have to follow Step B above for t
 Tried to replicate STUN Server kind of functionality
 
 
-What I did - 
+*What I did -*
+
 I have implemented TCP Port forwarding for *raw packets* on  AWS ec2 (with public IP) by building NginX from source and configuring it for tcp-stream options.
 Connection requests on 18.225.11.191:6877 are forwarded to 18.225.11.191:5000 on which ssh tunneling is done.
 Then used ssh tunneling from localhost:6877 on which VS Torrent is running to port 5000 of AWS machine.
 And this way got over NAT.
-And I am giving my IP as 18.225.11.191 while contacting tracker so that others , outside NAT network, can contact me as well
-
-(Not given clearly in any tutorial online - discovered after a lot of failures, please test it yourself if its possible - it will make it worth)
+And I am giving my IP as 18.225.11.191 while contacting tracker so that others , outside NAT network, can contact me as well.
 
 
 **Reason to choose Node JS over Python**
