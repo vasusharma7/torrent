@@ -30,14 +30,14 @@
   
  <hr/>
  
-------------Requirements------------
+**Requirements**
 
 1. npm v6 (pref 6.4.1) (sudo apt update && apt install npm)
 2. NodeJS v12 (pref 12.8) (sudo apt install nodejs)
 3. Electron JS - install globally (npm i -g electron)
 
 
-----------------Steps to run the code----------
+**Steps to run the code**
 (Can be run in GUI or CLI - either of D or E step to be done)
 
 **Also implemented the functionality of STUN server to get over NAT world using TCP port forwarding and ssh tunneling**
